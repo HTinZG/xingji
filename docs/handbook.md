@@ -485,3 +485,64 @@ adb logcat -d | findstr /i "authErrLog"
 ---
 
 *本文档随项目一起放在 `D:\Xingji\docs\handbook.md`，与源码同步更新。*
+
+---
+
+## 13. GitHub 仓库
+
+**地址**：https://github.com/HTinZG/xingji （私有）
+
+### 这台机器上的特殊配置
+
+推送时踩过一次 Recv failure: Connection was reset——**git 不会自动使用系统代理**。
+本仓库已把代理写进本地配置：
+
+```powershell
+cd D:\Xingji
+git config http.proxy  http://127.0.0.1:7897
+git config https.proxy http://127.0.0.1:7897
+```
+
+如果哪天换了代理软件或端口变了，改这两行即可（git config --unset 可去掉）。
+
+凭据用 Git Credential Manager 存在 Windows 凭据管理器里，登录过一次就不用再登。
+helper 的路径带空格，必须用 !"..." 包起来，否则 git 会把它当成 `git-credential-<名字>` 去找：
+
+```powershell
+git config credential.helper '!"/c/Program Files/Git/mingw64/bin/git-credential-manager.exe"'
+```
+
+### 以后怎么更新
+
+```powershell
+cd D:\Xingji
+git add -A
+git commit -m "这次改了什么"
+git push
+```
+
+### 仓库里有什么
+
+137 个文件、约 43 MB：
+
+| 目录 | 内容 |
+|---|---|
+| `app/` | 源码 67 个（含高德 SDK 的 jar 与 .so） |
+| `docs/` | 文档 60 个（含截图、导出样例） |
+| `tools/` | 16KB 检查脚本 |
+| 根目录 | Gradle 配置、README、.gitignore |
+
+### 不会进仓库的东西
+
+`local.properties`（含签名密码）、`keystore/`、`*.jks`、`artifacts/`（APK）、
+`build/`、`.gradle/`。提交前用 `git ls-files` 核对过，也全文扫过密钥。
+
+### 备份提醒
+
+GitHub 只备份了**代码和文档**。还有两样东西不在里面，必须单独备份：
+
+1. `D:\AndroidKeys\xingji-release.jks`（签名证书，丢了就无法给已装用户升级）
+2. 证书密码（记在离线的地方）
+
+> GitHub 是公开托管的私有仓库，不要把它当成唯一备份。
+> 建议 keystore 另外存一份到 U 盘或加密网盘。
