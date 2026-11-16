@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  允许明文 HTTP。
+
+  为什么必须开：AI 服务的 BaseURL 由用户自己填，有人会用局域网里的 http 服务
+  （比如自建代理）。系统默认禁止明文，开启前 App 会弹窗警告"Key 可能被窃取"，
+  用户显式确认后才保存。
+
+  风险边界：
+  - 只影响用户手动配置的 AI 请求，其它网络请求（高德地图 SDK）仍是 https
+  - 默认推荐 https，UI 上 http 保存时强制二次确认
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
