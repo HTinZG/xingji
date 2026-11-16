@@ -546,3 +546,8367 @@ GitHub 只备份了**代码和文档**。还有两样东西不在里面，必须
 
 > GitHub 是公开托管的私有仓库，不要把它当成唯一备份。
 > 建议 keystore 另外存一份到 U 盘或加密网盘。
+
+---
+
+---
+
+## 附录 A：源码全文
+
+> 为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」，
+> 那时翻 GitHub 不如在本地文档里直接搜关键词快。
+> 源码本身以仓库为准，这里这份是**某一时刻的快照**（62 个文件 / 8028 行）。
+> 改完代码后运行 `python tools/gen-handbook.py` 重新生成。
+
+网页版里每个文件都是折叠的，点标题展开。
+
+### 目录
+
+| 分组 | 文件 | 行数 | 说明 |
+|---|---|---|---|
+| 主程序 | `app/src/main/java/com/llyytt/path/core/export/ExportModels.kt` | 58 | 导出用的扁平模型。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/export/ShareComposer.kt` | 105 | 分享图合成。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/export/TrackExporter.kt` | 181 | GPX 1.1 / KML 2.2 生成器。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/format/Formatters.kt` | 29 | 展示层格式化。集中一处，避免每个页面各写一份导致口径不一致。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/geo/PolylineSimplifier.kt` | 80 | 折线抽稀（Douglas-Peucker）。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/geo/ScreenHitTest.kt` | 71 | 屏幕像素坐标（左上角原点，y 向下）。纯数据，不依赖 Android / 地图 SDK。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/geo/Wgs84.kt` | 58 | WGS-84 坐标：本 App 内部唯一合法的坐标类型。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/rules/DurationCalc.kt` | 44 | 活动时长计算。不缓存，每次按当前状态现算。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/rules/Segmenter.kt` | 240 | 分段草稿：只描述 seq 区间和方式，落库时才生成实体。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/rules/SpeedDisplay.kt` | 142 | 瞬时速度的取数、平滑、静止判定。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/rules/TripInvariants.kt` | 120 | 数据一致性校验。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/rules/TripStats.kt` | 73 | 中断次数（暂停 / 丢信号） |
+| 主程序 | `app/src/main/java/com/llyytt/path/core/rules/Tuning.kt` | 87 | 所有可调参数集中在这里。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/ai/AiClient.kt` | 98 | OpenAI 兼容接口的最小客户端。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/ai/AiSettingsStore.kt` | 78 | AI 配置。apiKey 是解密后的明文，只活在内存里。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/ai/KeyCrypto.kt` | 84 | AI Key 的本地加密。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/ai/TripContextBuilder.kt` | 90 | 给 AI 的上下文：**只发摘要，不发全量轨迹点**。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/ai/UrlValidator.kt` | 41 | BaseURL 校验。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/db/AiChatEntities.kt` | 54 | AI 聊天记录。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/db/AppDatabase.kt` | 83 | 1 -> 2 的开发期迁移：丢表重建（v1 从未对外发布，只有测试机有数据）。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/db/Daos.kt` | 152 | 进程被杀后重启时用它找回「没结束的行程」。最多一条（由业务层保证）。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/db/Entities.kt` | 185 | 行程状态。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/AiChatRepository.kt` | 29 | 聊天记录。只存本地，不进导出文件；清空数据时一起删。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/RecordingRepository.kt` | 139 | 开始记录的结果。已有未结束行程时不能悄悄再开一条。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/SegmentRepository.kt` | 163 | 分段的写操作。三个操作各自一个事务。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/TripRepository.kt` | 68 | 只读查询。写入仍然走 RecordingRepository，职责分开。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/settings/SettingsStore.kt` | 49 | 轻量设置存储。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/map/MapEngine.kt` | 83 | 离线能力分级。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingService.kt` | 522 | 记录前台服务。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingStateHolder.kt` | 48 | 记录页的实时状态。服务写，UI 读。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/ai/AiChatScreen.kt` | 309 | AI 聊天。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/mapdemo/MapDemoScreen.kt` | 185 | 天安门附近的一圈假轨迹，只用来验证“能画线”。第 3 步会换成真实记录。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/offline/OfflineInfoScreen.kt` | 123 | 离线地图说明页。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyGateScreen.kt` | 109 | 首启隐私门禁。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyPolicyScreen.kt` | 127 | 隐私说明页。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt` | 309 | 记录页。本步只做最小可用：开始 / 暂停 / 继续 / 结束 + 实时距离时长。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/settings/SettingsScreen.kt` | 340 | 设置页。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt` | 327 | 分段编辑器：自动分段 + 三个手动操作。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TrackPainter.kt` | 159 | 把轨迹点转成地图能画的折线。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripDetailScreen.kt` | 458 | 行程详情：地图 + 统计 + 简版回放。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripListScreen.kt` | 138 | — |
+| 主程序 | `app/src/main/java/com/llyytt/path/MainActivity.kt` | 104 | — |
+| 主程序 | `app/src/main/java/com/llyytt/path/XjApp.kt` | 82 | 全 App 唯一允许 import mapimpl 的地方。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/location/GnssLocationSource.kt` | 152 | 系统 GNSS 定位。MVP 唯一的定位实现。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/location/LocationSource.kt` | 52 | 定位失败原因。冷启动实测出问题时，靠它区分「没信号」还是「provider 没开」。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/mapimpl/amap/AMapEngine.kt` | 337 | 高德 3D 地图实现。整个 App 里唯一 import com.amap 的地方。 |
+| 单元测试 | `app/src/test/java/com/llyytt/path/core/export/TrackExporterTest.kt` | 130 | — |
+| 单元测试 | `app/src/test/java/com/llyytt/path/core/geo/PolylineHitTestTest.kt` | 96 | PolylineHitTest 的单元测试。 |
+| 单元测试 | `app/src/test/java/com/llyytt/path/core/geo/PolylineSimplifierTest.kt` | 73 | — |
+| 单元测试 | `app/src/test/java/com/llyytt/path/core/rules/DurationCalcTest.kt` | 88 | — |
+| 单元测试 | `app/src/test/java/com/llyytt/path/core/rules/SegmenterTest.kt` | 174 | 合成轨迹：走 2 分钟 → 停 30 秒 → 快走 1 分钟 → 骑车 2 分钟。 |
+| 单元测试 | `app/src/test/java/com/llyytt/path/core/rules/SpeedDisplayTest.kt` | 222 | — |
+| 单元测试 | `app/src/test/java/com/llyytt/path/core/rules/TripInvariantsTest.kt` | 137 | — |
+| 构建与配置 | `app/build.gradle.kts` | 184 | 模块构建脚本：依赖、签名、R8 |
+| 构建与配置 | `app/proguard-rules.pro` | 39 | R8 混淆/保留规则 |
+| 构建与配置 | `app/src/main/AndroidManifest.xml` | 65 | 权限、组件、高德 Key 占位符 |
+| 构建与配置 | `app/src/main/res/xml/file_paths.xml` | 6 | FileProvider 暴露的目录 |
+| 构建与配置 | `app/src/main/res/xml/network_security_config.xml` | 20 | 允许用户配置的 http 接口 |
+| 构建与配置 | `build.gradle.kts` | 6 | 根构建脚本 |
+| 构建与配置 | `gradle.properties` | 17 | Gradle 与 Kotlin 编译参数 |
+| 构建与配置 | `settings.gradle.kts` | 25 | 工程与仓库配置 |
+| 构建与配置 | `tools/Check-16Kb.ps1` | 181 | 16KB 页对齐检查脚本 |
+
+
+### 主程序
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/export/ExportModels.kt -->
+
+```kotlin
+package com.llyytt.path.core.export
+
+import com.llyytt.path.data.db.TransportMode
+import com.llyytt.path.data.repo.TripDetail
+
+/**
+ * 导出用的扁平模型。
+ *
+ * 存在的理由：让 [TrackExporter] 不依赖 Room 实体和 Android，
+ * 这样导出格式可以纯 JVM 单测（格式错了比功能错了更丢人）。
+ */
+data class ExportPoint(
+    val seq: Int,
+    val lat: Double,
+    val lng: Double,
+    val recordedAt: Long,
+)
+
+data class ExportSegment(
+    val startSeq: Int,
+    val endSeq: Int,
+    val mode: TransportMode,
+)
+
+data class ExportStay(
+    val lat: Double,
+    val lng: Double,
+    val arriveAt: Long,
+    val leaveAt: Long?,
+) {
+    val durationMillis: Long
+        get() = ((leaveAt ?: arriveAt) - arriveAt).coerceAtLeast(0)
+}
+
+data class TripDetailForExport(
+    val title: String,
+    val startedAt: Long,
+    val exportedAt: Long,
+    val points: List<ExportPoint>,
+    val segments: List<ExportSegment>,
+    val stays: List<ExportStay>,
+) {
+    private val bySeq: Map<Int, ExportPoint> by lazy { points.associateBy { it.seq } }
+
+    fun pointAt(seq: Int): ExportPoint? = bySeq[seq]
+}
+
+/** 把数据库里的行程转成导出模型。坐标原样带过去——**不做任何坐标系转换**。 */
+fun TripDetail.toExportModel(title: String, exportedAt: Long = System.currentTimeMillis()): TripDetailForExport =
+    TripDetailForExport(
+        title = title,
+        startedAt = trip.startedAt,
+        exportedAt = exportedAt,
+        points = points.map { ExportPoint(it.seq, it.lat, it.lng, it.recordedAt) },
+        segments = segments.map { ExportSegment(it.startPointSeq, it.endPointSeq, it.mode) },
+        stays = stays.map { ExportStay(it.lat, it.lng, it.arriveAt, it.leaveAt) },
+    )
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/export/ShareComposer.kt -->
+
+```kotlin
+package com.llyytt.path.core.export
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import androidx.core.content.FileProvider
+import java.io.File
+
+/**
+ * 分享图合成。
+ *
+ * 刻意的设计：**不截屏**。截屏会把状态栏、导航栏、按钮一起带进去，
+ * 而且很容易把别的界面（设置页、聊天页）拍进去。
+ *
+ * 这里只拿地图控件的 `snapshot()`，然后自己画一条统计带拼在下面，
+ * 所以分享图里必然只有：地图 + 轨迹 + 统计数字。
+ */
+object ShareComposer {
+
+    private const val BAND_RATIO = 0.24f
+    private const val MIN_BAND_PX = 240f
+
+    fun compose(
+        map: Bitmap,
+        title: String,
+        subtitle: String,
+        stats: List<Pair<String, String>>,
+    ): Bitmap {
+        val width = map.width
+        val bandHeight = maxOf(map.height * BAND_RATIO, MIN_BAND_PX * (width / 1080f)).toInt()
+
+        val output = Bitmap.createBitmap(width, map.height + bandHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        canvas.drawColor(Color.WHITE)
+        canvas.drawBitmap(map, 0f, 0f, null)
+
+        val top = map.height.toFloat()
+        canvas.drawRect(0f, top, width.toFloat(), output.height.toFloat(), Paint().apply {
+            color = Color.WHITE
+        })
+
+        val margin = width * 0.05f
+        var y = top + bandHeight * 0.26f
+
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#1A1A1A")
+            textSize = width * 0.048f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        canvas.drawText(title, margin, y, titlePaint)
+
+        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#757575")
+            textSize = width * 0.030f
+        }
+        y += bandHeight * 0.20f
+        canvas.drawText(subtitle, margin, y, subPaint)
+
+        // 统计：一行四项，等宽排开
+        if (stats.isNotEmpty()) {
+            y += bandHeight * 0.26f
+            val slot = (width - margin * 2) / stats.size
+            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#9E9E9E")
+                textSize = width * 0.026f
+            }
+            val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#1A1A1A")
+                textSize = width * 0.042f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            stats.forEachIndexed { index, (label, value) ->
+                val x = margin + slot * index
+                canvas.drawText(label, x, y, labelPaint)
+                canvas.drawText(value, x, y + bandHeight * 0.16f, valuePaint)
+            }
+        }
+
+        return output
+    }
+
+    fun writeToCache(context: Context, bitmap: Bitmap, fileName: String): android.net.Uri {
+        val dir = File(context.cacheDir, "share").apply { mkdirs() }
+        val file = File(dir, fileName)
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }
+
+    fun share(context: Context, uri: android.net.Uri, text: String) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, text)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "分享行程").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/export/TrackExporter.kt -->
+
+```kotlin
+package com.llyytt.path.core.export
+
+import com.llyytt.path.data.db.TransportMode
+import java.util.Locale
+
+/**
+ * GPX 1.1 / KML 2.2 生成器。
+ *
+ * 三条硬规则：
+ * 1. **坐标一律 WGS84**，不做任何偏移转换。Google Earth、GPX 查看器都按 WGS84 解释，
+ *    这里要是偷偷转成 GCJ-02，导出的轨迹整体会偏 300~600 米——也就是"位置偏移"。
+ * 2. 时间一律 ISO 8601 UTC（`2026-11-16T12:00:00Z`）。
+ * 3. 只写轨迹点、时间、分段方式、停留点。不写任何配置、不写任何对话。
+ *
+ * 纯函数，无 Android 依赖，可单测。
+ */
+object TrackExporter {
+
+    enum class Format(val extension: String, val mimeType: String) {
+        GPX("gpx", "application/gpx+xml"),
+        KML("kml", "application/vnd.google-earth.kml+xml"),
+    }
+
+    /** 出现这些片段就拒绝导出——防御性检查，正常内容里不可能有。 */
+    private val FORBIDDEN_TOKENS = listOf("sk-", "Authorization", "Bearer ", "api_key", "apiKey")
+
+    /**
+     * GPX `<type>` 的取值。集中在一个常量里，避免散落在拼接逻辑中改一处漏一处。
+     * 取值用 GPX 社区通行写法，Google Earth / Strava / gpx.studio 都能识别。
+     */
+    private val GPX_TYPE: Map<TransportMode, String> = mapOf(
+        TransportMode.WALK to "walking",
+        TransportMode.BIKE to "cycling",
+        TransportMode.CAR to "driving",
+        TransportMode.UNKNOWN to "unknown",
+    )
+
+    /** KML 线颜色，aabbggrr（KML 和常规 ARGB 反着来）。 */
+    private val KML_COLOR: Map<TransportMode, String> = mapOf(
+        TransportMode.WALK to "ff4caf50",
+        TransportMode.BIKE to "ff03a9f4",
+        TransportMode.CAR to "ffff9800",
+        TransportMode.UNKNOWN to "ff9e9e9e",
+    )
+
+    fun build(detail: TripDetailForExport, format: Format): String =
+        when (format) {
+            Format.GPX -> toGpx(detail)
+            Format.KML -> toKml(detail)
+        }
+
+    // ---------------------------------------------------------------- GPX 1.1
+
+    fun toGpx(detail: TripDetailForExport): String = buildString {
+        appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
+        appendLine(
+            """<gpx version="1.1" creator="Xingji" """ +
+                """xmlns="http://www.topografix.com/GPX/1/1" """ +
+                """xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" """ +
+                """xsi:schemaLocation="http://www.topografix.com/GPX/1/1 """ +
+                """http://www.topografix.com/GPX/1/1/gpx.xsd">""",
+        )
+        appendLine("  <metadata>")
+        appendLine("    <name>${escape(detail.title)}</name>")
+        appendLine("    <time>${iso8601(detail.startedAt)}</time>")
+        appendLine("  </metadata>")
+
+        // 停留点放在最前面，查看器里会显示成独立标记
+        detail.stays.forEachIndexed { index, stay ->
+            appendLine("""  <wpt lat="${coord(stay.lat)}" lon="${coord(stay.lng)}">""")
+            appendLine("    <name>停留 ${index + 1}</name>")
+            appendLine("    <time>${iso8601(stay.arriveAt)}</time>")
+            val desc = "停留 ${(stay.durationMillis / 1000)} 秒"
+            appendLine("    <desc>${escape(desc)}</desc>")
+            appendLine("  </wpt>")
+        }
+
+        // 每段一个 trk：GPX 的 trkseg 装不下"方式"，拆成多个 trk 才能保住这个信息
+        detail.segments.forEachIndexed { index, segment ->
+            appendLine("  <trk>")
+            appendLine("    <name>第 ${index + 1} 段 · ${modeLabel(segment.mode)}</name>")
+            appendLine("    <type>${GPX_TYPE[segment.mode] ?: GPX_TYPE.getValue(TransportMode.UNKNOWN)}</type>")
+            appendLine("    <trkseg>")
+            for (seq in segment.startSeq..segment.endSeq) {
+                val point = detail.pointAt(seq) ?: continue
+                appendLine("""      <trkpt lat="${coord(point.lat)}" lon="${coord(point.lng)}">""")
+                appendLine("        <time>${iso8601(point.recordedAt)}</time>")
+                appendLine("      </trkpt>")
+            }
+            appendLine("    </trkseg>")
+            appendLine("  </trk>")
+        }
+        append("</gpx>")
+    }
+
+    // ---------------------------------------------------------------- KML 2.2
+
+    fun toKml(detail: TripDetailForExport): String = buildString {
+        appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
+        appendLine("""<kml xmlns="http://www.opengis.net/kml/2.2">""")
+        appendLine("  <Document>")
+        appendLine("    <name>${escape(detail.title)}</name>")
+        appendLine("    <description>${escape("导出于 ${iso8601(detail.exportedAt)}，坐标 WGS84")}</description>")
+
+        // 每段一个独立 Style：id 带段号，即使两段同方式也不会撞 id。
+        // 这样以后想按段给不同颜色（而不是按方式），不用改 id 规则。
+        detail.segments.forEachIndexed { index, segment ->
+            val styleId = styleIdFor(index, segment.mode)
+            appendLine("    <Style id=\"$styleId\">")
+            appendLine("      <LineStyle><color>${KML_COLOR[segment.mode]}</color><width>4</width></LineStyle>")
+            appendLine("    </Style>")
+            appendLine("    <Placemark>")
+            appendLine("      <name>${escape("第 ${index + 1} 段 · ${modeLabel(segment.mode)}")}</name>")
+            appendLine("      <styleUrl>#$styleId</styleUrl>")
+            appendLine("      <LineString>")
+            appendLine("        <tessellate>1</tessellate>")
+            append("<coordinates>")
+            // KML 是 经度,纬度,高程 —— 顺序和人们说话时相反，这里不能写反
+            for (seq in segment.startSeq..segment.endSeq) {
+                val point = detail.pointAt(seq) ?: continue
+                append("${coord(point.lng)},${coord(point.lat)},0 ")
+            }
+            appendLine("</coordinates>")
+            appendLine("      </LineString>")
+            appendLine("    </Placemark>")
+        }
+
+        detail.stays.forEachIndexed { index, stay ->
+            appendLine("    <Placemark>")
+            appendLine("      <name>${escape("停留 ${index + 1}")}</name>")
+            appendLine("      <Point><coordinates>${coord(stay.lng)},${coord(stay.lat)},0</coordinates></Point>")
+            appendLine("    </Placemark>")
+        }
+
+        appendLine("  </Document>")
+        append("</kml>")
+    }
+
+    // ---------------------------------------------------------------- 工具
+
+    /** 导出前的最后一道闸：发现可疑片段就返回问题列表，调用方必须中止。 */
+    fun scanForSensitiveContent(text: String, extraForbidden: List<String> = emptyList()): List<String> {
+        val findings = mutableListOf<String>()
+        (FORBIDDEN_TOKENS + extraForbidden).forEach { token ->
+            if (token.isNotBlank() && text.contains(token, ignoreCase = true)) {
+                findings += "命中「$token」"
+            }
+        }
+        return findings
+    }
+
+    /** ISO 8601，UTC，秒级。GPX/KML 都按这个解释。 */
+    fun iso8601(epochMillis: Long): String =
+        java.time.Instant.ofEpochMilli(epochMillis)
+            .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+            .toString()
+
+    /** 6 位小数约 0.1 米，足够；固定 Locale.US 防止某些地区写出逗号小数点。 */
+    fun coord(value: Double): String = String.format(Locale.US, "%.6f", value)
+
+    /**
+     * KML 样式 id：`seg_<序号>_<方式>`。
+     * 带段号是为了保证唯一——同一行程里两段都是骑车时，只按方式命名会撞 id。
+     */
+    fun styleIdFor(segmentIndex: Int, mode: TransportMode): String =
+        "seg_${segmentIndex + 1}_${mode.name.lowercase()}"
+
+    private fun modeLabel(mode: TransportMode): String = when (mode) {
+        TransportMode.WALK -> "走路"
+        TransportMode.BIKE -> "骑车"
+        TransportMode.CAR -> "坐车"
+        TransportMode.UNKNOWN -> "未分类"
+    }
+
+    private fun escape(value: String): String = value
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/format/Formatters.kt -->
+
+```kotlin
+package com.llyytt.path.core.format
+
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/** 展示层格式化。集中一处，避免每个页面各写一份导致口径不一致。 */
+object Fmt {
+
+    fun distance(meters: Double): String =
+        if (meters < 1000) "%.0f 米".format(meters) else "%.2f 公里".format(meters / 1000.0)
+
+    fun duration(millis: Long): String {
+        val totalSeconds = millis / 1000
+        val h = totalSeconds / 3600
+        val m = (totalSeconds % 3600) / 60
+        val s = totalSeconds % 60
+        return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
+    }
+
+    fun speed(mps: Double): String = "%.1f km/h".format(mps * 3.6)
+
+    fun clock(millis: Long): String =
+        SimpleDateFormat("HH:mm", Locale.CHINA).format(Date(millis))
+
+    fun dateTime(millis: Long): String =
+        SimpleDateFormat("MM-dd HH:mm", Locale.CHINA).format(Date(millis))
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/geo/PolylineSimplifier.kt -->
+
+```kotlin
+package com.llyytt.path.core.geo
+
+import kotlin.math.abs
+import kotlin.math.cos
+
+/**
+ * 折线抽稀（Douglas-Peucker）。
+ *
+ * 为什么要抽稀：一小时步行能存 2000+ 个点，直接丢给地图 SDK 画线会掉帧，
+ * 而且视觉上根本看不出差别。抽稀后通常能降到 1/10。
+ *
+ * 注意：抽稀只用于**渲染**，数据库里的原始点一个都不删。
+ * 距离计算也基于原始点，不用抽稀后的。
+ */
+object PolylineSimplifier {
+
+    /** 默认容差（米）。2 米大约等于一个手指宽，肉眼看不出。 */
+    const val DEFAULT_EPSILON_METERS = 2.0
+
+    fun simplify(points: List<Wgs84>, epsilonMeters: Double = DEFAULT_EPSILON_METERS): List<Wgs84> {
+        if (points.size <= 2) return points
+
+        val keep = BooleanArray(points.size)
+        keep[0] = true
+        keep[points.size - 1] = true
+
+        // 用显式栈代替递归，避免长轨迹把栈打爆
+        val stack = ArrayDeque<IntArray>()
+        stack.addLast(intArrayOf(0, points.size - 1))
+
+        while (stack.isNotEmpty()) {
+            val (start, end) = stack.removeLast()
+            if (end <= start + 1) continue
+
+            var maxDist = 0.0
+            var maxIndex = -1
+            for (i in start + 1 until end) {
+                val d = perpendicularDistanceMeters(points[i], points[start], points[end])
+                if (d > maxDist) {
+                    maxDist = d
+                    maxIndex = i
+                }
+            }
+
+            if (maxDist > epsilonMeters && maxIndex > 0) {
+                keep[maxIndex] = true
+                stack.addLast(intArrayOf(start, maxIndex))
+                stack.addLast(intArrayOf(maxIndex, end))
+            }
+        }
+
+        val result = ArrayList<Wgs84>(keep.count { it })
+        for (i in points.indices) if (keep[i]) result.add(points[i])
+        return result
+    }
+
+    /** 点到线段的垂距（米）。用等距圆柱投影近似，城市尺度误差可忽略。 */
+    fun perpendicularDistanceMeters(p: Wgs84, a: Wgs84, b: Wgs84): Double {
+        val lat0 = Math.toRadians((a.lat + b.lat) / 2.0)
+        val kx = 111_320.0 * cos(lat0)
+        val ky = 110_540.0
+
+        val px = (p.lng - a.lng) * kx
+        val py = (p.lat - a.lat) * ky
+        val bx = (b.lng - a.lng) * kx
+        val by = (b.lat - a.lat) * ky
+
+        val lenSquared = bx * bx + by * by
+        if (lenSquared == 0.0) return Math.hypot(px, py)
+
+        var t = (px * bx + py * by) / lenSquared
+        t = t.coerceIn(0.0, 1.0)
+        return Math.hypot(px - t * bx, py - t * by)
+    }
+
+    /** 估算抽稀能省多少点，用于日志。 */
+    fun savings(before: Int, after: Int): String =
+        if (before == 0) "0%" else "${100 - after * 100 / before}%"
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/geo/ScreenHitTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.geo
+
+import kotlin.math.hypot
+
+/** 屏幕像素坐标（左上角原点，y 向下）。纯数据，不依赖 Android / 地图 SDK。 */
+data class ScreenPoint(val x: Float, val y: Float)
+
+/**
+ * 折线命中判定的纯几何工具。
+ *
+ * 为什么不用地图 SDK 自带的折线点击：
+ * 高德 11.x 的 PolylineOptions 没有 clickable 参数，setOnPolylineClickListener 实际不触发。
+ * 所以统一由「地图点击回调 + 屏幕像素距离」自己判定，引擎无关、可单测。
+ *
+ * 设计约定：调用方负责把经纬度投影成 ScreenPoint（这一步依赖具体引擎），
+ * 本类只做纯几何，方便第 4/5 步在分段选择里复用。
+ */
+object PolylineHitTest {
+
+    /** 手指按在线附近就算选中：48px，520dpi 下约 14dp。 */
+    const val DEFAULT_TOLERANCE_PX = 48f
+
+    /** 点到线段的最短距离（像素）。 */
+    fun distanceToSegment(p: ScreenPoint, a: ScreenPoint, b: ScreenPoint): Float {
+        val dx = b.x - a.x
+        val dy = b.y - a.y
+        val lenSquared = dx * dx + dy * dy
+        if (lenSquared == 0f) return hypot(p.x - a.x, p.y - a.y)
+
+        var t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSquared
+        t = t.coerceIn(0f, 1f)
+        val cx = a.x + t * dx
+        val cy = a.y + t * dy
+        return hypot(p.x - cx, p.y - cy)
+    }
+
+    /** 点到整条折线的最短距离。点少于 2 个时退化成点距。 */
+    fun distanceToPolyline(p: ScreenPoint, points: List<ScreenPoint>): Float {
+        if (points.isEmpty()) return Float.MAX_VALUE
+        if (points.size == 1) return hypot(p.x - points[0].x, p.y - points[0].y)
+
+        var best = Float.MAX_VALUE
+        for (i in 1 until points.size) {
+            val d = distanceToSegment(p, points[i - 1], points[i])
+            if (d < best) best = d
+        }
+        return best
+    }
+
+    /**
+     * 在一组折线里找离点击点最近的一条。
+     * @return 命中的下标；没有命中返回 -1
+     */
+    fun nearestPolyline(
+        p: ScreenPoint,
+        polylines: List<List<ScreenPoint>>,
+        tolerancePx: Float = DEFAULT_TOLERANCE_PX,
+    ): Int {
+        var bestIndex = -1
+        var best = Float.MAX_VALUE
+        polylines.forEachIndexed { index, points ->
+            val d = distanceToPolyline(p, points)
+            if (d < best) {
+                best = d
+                bestIndex = index
+            }
+        }
+        return if (best <= tolerancePx) bestIndex else -1
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/geo/Wgs84.kt -->
+
+```kotlin
+package com.llyytt.path.core.geo
+
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+/**
+ * WGS-84 坐标：本 App 内部唯一合法的坐标类型。
+ *
+ * 三条铁律（破坏任意一条，导出文件就会永久偏移）：
+ * 1. 系统 GNSS 拿到的原始值就是 WGS84，直接构造本类，不做任何偏移加减。
+ * 2. 高德的 GCJ-02、百度的 BD-09 只允许出现在 mapimpl 包内部，
+ *    绝不允许出现在这里、数据库里、导出文件里。
+ * 3. 导出 GPX / KML 时直接写 lat/lng —— 这两个格式的规范坐标就是 WGS84。
+ */
+data class Wgs84(val lat: Double, val lng: Double) {
+
+    val isValid: Boolean
+        get() = lat in -90.0..90.0 && lng in -180.0..180.0 && !(lat == 0.0 && lng == 0.0)
+
+    /** 球面距离（米）。轨迹统计一律走这里，不用平面近似。 */
+    fun distanceTo(other: Wgs84): Double {
+        val earthRadius = 6371008.8
+        val dLat = Math.toRadians(other.lat - lat)
+        val dLng = Math.toRadians(other.lng - lng)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+            cos(Math.toRadians(lat)) * cos(Math.toRadians(other.lat)) *
+            sin(dLng / 2) * sin(dLng / 2)
+        return 2 * earthRadius * asin(sqrt(a))
+    }
+}
+
+/** 包含一组点的最小经纬度矩形，用于“缩放到全部轨迹”。 */
+data class Wgs84Bounds(
+    val south: Double,
+    val west: Double,
+    val north: Double,
+    val east: Double,
+) {
+    companion object {
+        fun of(points: List<Wgs84>): Wgs84Bounds? {
+            if (points.isEmpty()) return null
+            var s = points[0].lat
+            var n = points[0].lat
+            var w = points[0].lng
+            var e = points[0].lng
+            for (p in points) {
+                if (p.lat < s) s = p.lat
+                if (p.lat > n) n = p.lat
+                if (p.lng < w) w = p.lng
+                if (p.lng > e) e = p.lng
+            }
+            return Wgs84Bounds(s, w, n, e)
+        }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/rules/DurationCalc.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.data.db.TripStatus
+
+/**
+ * 活动时长计算。不缓存，每次按当前状态现算。
+ *
+ * 三种状态：
+ * - RECORDING：end = now（endedAt 为空），只扣已闭合的暂停
+ * - PAUSED   ：end = now，未闭合的暂停用 now 当 resumedAt，等于把「正在暂停」这段扣掉
+ * - FINISHED ：end = endedAt，全部暂停都已闭合；万一有脏数据用 end 兜底
+ */
+object DurationCalc {
+
+    fun activeMillis(
+        startedAt: Long,
+        endedAt: Long?,
+        status: TripStatus,
+        /** (pausedAt, resumedAt?)；resumedAt 为 null 表示还没恢复 */
+        pauses: List<Pair<Long, Long?>>,
+        now: Long,
+    ): Long {
+        val end = endedAt ?: now
+        var total = end - startedAt
+        if (total <= 0) return 0
+
+        for ((pausedAt, resumedAt) in pauses) {
+            val pauseEnd = resumedAt ?: when (status) {
+                TripStatus.PAUSED -> now
+                else -> end
+            }
+            val duration = pauseEnd - pausedAt
+            if (duration > 0) total -= duration
+        }
+        return total.coerceAtLeast(0L)
+    }
+
+    /** 墙上时间（含暂停）。详情页展示「总共过了多久」用。 */
+    fun wallMillis(startedAt: Long, endedAt: Long?, now: Long): Long {
+        val end = endedAt ?: now
+        return (end - startedAt).coerceAtLeast(0L)
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/rules/Segmenter.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TransportMode
+
+/** 分段草稿：只描述 seq 区间和方式，落库时才生成实体。 */
+data class SegmentDraft(
+    val startSeq: Int,
+    val endSeq: Int,
+    val mode: TransportMode,
+)
+
+/** 停留草稿。segment 里不出现 STAY，停留只在这里。 */
+data class StayDraft(
+    val startSeq: Int,
+    val endSeq: Int,
+    val lat: Double,
+    val lng: Double,
+    val radiusMeters: Double,
+    val arriveAt: Long,
+    val leaveAt: Long,
+)
+
+data class SegmentationResult(
+    val segments: List<SegmentDraft>,
+    val stays: List<StayDraft>,
+)
+
+/**
+ * 端上自动分段。
+ *
+ * 规则（全部参数在 Tuning.Segment，与地图「按速度着色」共用同一套阈值）：
+ * 1. 先按 `startsNewSegment` 切「连续片」，断点两边不参与同一段。
+ * 2. 片内用中位数平滑后的速度找停留：连续低于 STOP_SPEED 且时长 ≥ STOP_MIN 记为停留。
+ * 3. 剩下的点在各自连续片内按速度分档（走路/骑车/车）合并成段。
+ * 4. 短于 MIN_SEGMENT 的段并入相邻段，避免切得太碎。
+ *
+ * 注意：停留点是「空洞」，不会出现在任何 segment 的区间里。
+ * startsNewSegment 只在这里被用作切分依据；校验层不会因此报错（见 TripInvariants）。
+ */
+object Segmenter {
+
+    private data class RangeSeg(val start: Int, val end: Int, val mode: TransportMode)
+
+    fun run(points: List<TrackPointEntity>): SegmentationResult {
+        if (points.size < 2) return SegmentationResult(emptyList(), emptyList())
+
+        val speeds = smoothedSpeeds(points)
+        val stayFlag = BooleanArray(points.size)
+        val stays = ArrayList<StayDraft>()
+        val segments = ArrayList<RangeSeg>()
+
+        for (run in contiguousRuns(points)) {
+            // 1) 停留
+            var i = run.first
+            while (i <= run.last) {
+                if (speeds[i] >= Tuning.Segment.STOP_SPEED_MPS) {
+                    i++
+                    continue
+                }
+                var j = i
+                while (j < run.last && speeds[j + 1] < Tuning.Segment.STOP_SPEED_MPS) j++
+                val duration = points[j].recordedAt - points[i].recordedAt
+                if (duration >= Tuning.Segment.STOP_MIN_DURATION_MS) {
+                    for (k in i..j) stayFlag[k] = true
+                    stays.add(buildStay(points, i, j))
+                }
+                i = j + 1
+            }
+
+            // 2) 分段（跳过停留点）
+            var segStart = -1
+            var segMode: TransportMode? = null
+            for (k in run) {
+                if (stayFlag[k]) {
+                    if (segStart >= 0) {
+                        segments.add(RangeSeg(segStart, k - 1, segMode!!))
+                        segStart = -1
+                        segMode = null
+                    }
+                    continue
+                }
+                val mode = classify(speeds[k])
+                if (segStart < 0) {
+                    segStart = k
+                    segMode = mode
+                } else if (mode != segMode) {
+                    segments.add(RangeSeg(segStart, k - 1, segMode!!))
+                    segStart = k
+                    segMode = mode
+                }
+            }
+            if (segStart >= 0) segments.add(RangeSeg(segStart, run.last, segMode!!))
+        }
+
+        // 3) 合并过短的段
+        mergeShort(points, segments)
+
+        return SegmentationResult(
+            segments = segments.map {
+                SegmentDraft(
+                    startSeq = points[it.start].seq,
+                    endSeq = points[it.end].seq,
+                    mode = it.mode,
+                )
+            }.sortedBy { it.startSeq },
+            stays = stays.sortedBy { it.arriveAt },
+        )
+    }
+
+    /** 速度分档。与 TrackPainter.speedBucket 用同一组阈值。 */
+    fun classify(speedMps: Double): TransportMode = when {
+        speedMps < Tuning.Segment.WALK_MAX_MPS -> TransportMode.WALK
+        speedMps < Tuning.Segment.BIKE_MAX_MPS -> TransportMode.BIKE
+        else -> TransportMode.CAR
+    }
+
+    // ---------- 内部 ----------
+
+    private fun contiguousRuns(points: List<TrackPointEntity>): List<IntRange> {
+        val out = ArrayList<IntRange>()
+        var start = 0
+        for (i in 1 until points.size) {
+            if (points[i].startsNewSegment) {
+                out.add(start until i)
+                start = i
+            }
+        }
+        out.add(start until points.size)
+        return out
+    }
+
+    /** 逐点速度：优先系统值，否则用上一点算；断点后重新开始。 */
+    private fun rawSpeeds(points: List<TrackPointEntity>): DoubleArray {
+        val out = DoubleArray(points.size)
+        var prev: TrackPointEntity? = null
+        for (i in points.indices) {
+            val p = points[i]
+            if (p.startsNewSegment) prev = null
+            val system = p.speedMps
+            out[i] = when {
+                system != null && system >= 0f -> system.toDouble()
+                prev != null -> {
+                    val last = prev!!
+                    val seconds = (p.recordedAt - last.recordedAt) / 1000.0
+                    if (seconds > 0.2) {
+                        Wgs84(last.lat, last.lng).distanceTo(Wgs84(p.lat, p.lng)) / seconds
+                    } else {
+                        0.0
+                    }
+                }
+                else -> 0.0
+            }
+            prev = p
+        }
+        return out
+    }
+
+    private fun smoothedSpeeds(points: List<TrackPointEntity>): DoubleArray {
+        val raw = rawSpeeds(points)
+        val out = DoubleArray(points.size)
+        val window = ArrayDeque<Double>()
+        for (i in points.indices) {
+            if (points[i].startsNewSegment) window.clear()
+            window.addLast(raw[i])
+            while (window.size > Tuning.Segment.SMOOTH_WINDOW) window.removeFirst()
+            out[i] = SpeedSmoother.median(window)
+        }
+        return out
+    }
+
+    private fun buildStay(points: List<TrackPointEntity>, start: Int, end: Int): StayDraft {
+        var latSum = 0.0
+        var lngSum = 0.0
+        for (k in start..end) {
+            latSum += points[k].lat
+            lngSum += points[k].lng
+        }
+        val count = end - start + 1
+        val centerLat = latSum / count
+        val centerLng = lngSum / count
+        var radius = 0.0
+        for (k in start..end) {
+            val d = Wgs84(centerLat, centerLng).distanceTo(Wgs84(points[k].lat, points[k].lng))
+            if (d > radius) radius = d
+        }
+        return StayDraft(
+            startSeq = points[start].seq,
+            endSeq = points[end].seq,
+            lat = centerLat,
+            lng = centerLng,
+            radiusMeters = radius,
+            arriveAt = points[start].recordedAt,
+            leaveAt = points[end].recordedAt,
+        )
+    }
+
+    private fun duration(points: List<TrackPointEntity>, seg: RangeSeg): Long =
+        points[seg.end].recordedAt - points[seg.start].recordedAt
+
+    /**
+     * 过短的段并入相邻段。
+     * 只在「索引相邻」时合并——中间隔着停留的两段不能合，否则停留点会被包进 segment。
+     */
+    private fun mergeShort(points: List<TrackPointEntity>, segs: MutableList<RangeSeg>) {
+        var changed = true
+        while (changed && segs.size > 1) {
+            changed = false
+            for (i in segs.indices) {
+                val seg = segs[i]
+                if (duration(points, seg) >= Tuning.Segment.MIN_SEGMENT_MS) continue
+
+                val prev = segs.getOrNull(i - 1)
+                val next = segs.getOrNull(i + 1)
+                val prevAdjacent = prev != null && prev.end + 1 == seg.start
+                val nextAdjacent = next != null && seg.end + 1 == next.start
+
+                val mergePrev = prevAdjacent &&
+                    (!nextAdjacent || duration(points, prev!!) >= duration(points, next!!))
+
+                when {
+                    mergePrev -> {
+                        segs[i - 1] = prev!!.copy(end = seg.end)
+                        segs.removeAt(i)
+                        changed = true
+                    }
+                    nextAdjacent -> {
+                        segs[i + 1] = next!!.copy(start = seg.start)
+                        segs.removeAt(i)
+                        changed = true
+                    }
+                    else -> Unit // 两边都是停留，保持原样
+                }
+                if (changed) break
+            }
+        }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/rules/SpeedDisplay.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.data.db.TrackPointEntity
+
+/**
+ * 瞬时速度的取数、平滑、静止判定。
+ *
+ * 三个明确的边界：
+ * 1. 精度差的点**不参与**速度计算（不用它们做样本，也不拿它们算距离/时间）。
+ * 2. 显示用平滑值（最近 N 个样本的中位数），地图着色用原始值，两者不绑死。
+ * 3. 内部一律 m/s，只有展示层转 km/h。
+ */
+object SpeedSampler {
+
+    /**
+     * 从一次定位里取速度样本。
+     *
+     * 优先系统 Speed；为 null 时回退到「上一点到当前点的距离 / 时间」。
+     * 返回 null 表示这次不产生样本（精度不够、没有上一点、时间差太小）。
+     */
+    fun sample(
+        previousPoint: Wgs84?,
+        previousTimeMillis: Long?,
+        currentPoint: Wgs84,
+        currentTimeMillis: Long,
+        systemSpeedMps: Float?,
+        accuracyMeters: Float,
+    ): Double? {
+        if (accuracyMeters > Tuning.Filter.MAX_ACCURACY_M) return null
+
+        if (systemSpeedMps != null && systemSpeedMps >= 0f) {
+            return systemSpeedMps.toDouble()
+        }
+
+        if (previousPoint == null || previousTimeMillis == null) return null
+        val seconds = (currentTimeMillis - previousTimeMillis) / 1000.0
+        if (seconds <= 0.2) return null
+
+        return previousPoint.distanceTo(currentPoint) / seconds
+    }
+}
+
+/**
+ * 速度平滑 + 静止判定。有状态，一个行程一个实例。
+ *
+ * 用中位数而不是平均数：单次 GPS 跳点（比如突然 30 m/s）不会把显示带偏。
+ */
+class SpeedSmoother(
+    private val windowSize: Int = Tuning.SpeedDisplay.WINDOW_SIZE,
+    private val stationarySpeedMps: Double = Tuning.SpeedDisplay.STATIONARY_SPEED_MPS,
+    private val stationaryHoldMillis: Long = Tuning.SpeedDisplay.STATIONARY_HOLD_MS,
+) {
+
+    data class Snapshot(
+        val smoothedMps: Double,
+        val stationary: Boolean,
+    )
+
+    private val window = ArrayDeque<Double>()
+    private var belowSinceMillis: Long? = null
+
+    fun add(speedMps: Double, atMillis: Long): Snapshot {
+        window.addLast(speedMps)
+        while (window.size > windowSize) window.removeFirst()
+
+        val smoothed = median(window)
+
+        // 非对称判定：进入静止要谨慎（连续 5 秒低于阈值），离开静止要灵敏。
+        // 只靠中位数退出会有明显延迟——窗口里旧的低速样本会把中位数压住好几十秒，
+        // 用户明明已经走起来了，界面还显示「静止」。所以只要本次原始样本达到阈值就立即解除。
+        val below = smoothed < stationarySpeedMps && speedMps < stationarySpeedMps
+        if (!below) {
+            belowSinceMillis = null
+        } else if (belowSinceMillis == null) {
+            belowSinceMillis = atMillis
+        }
+
+        val stationary = below && belowSinceMillis?.let { atMillis - it >= stationaryHoldMillis } == true
+        return Snapshot(smoothed, stationary)
+    }
+
+    fun reset() {
+        window.clear()
+        belowSinceMillis = null
+    }
+
+    companion object {
+        fun median(values: Collection<Double>): Double {
+            if (values.isEmpty()) return 0.0
+            val sorted = values.sorted()
+            val n = sorted.size
+            return if (n % 2 == 1) sorted[n / 2] else (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+        }
+    }
+}
+
+/**
+ * 对已存库的行程离线跑一遍同样的平滑，供详情页回放使用。
+ *
+ * 与实时记录用的是同一个 [SpeedSmoother]，所以两处的「静止」语义一致。
+ */
+object SpeedSeries {
+
+    data class Sample(
+        val smoothedMps: Double?,
+        val stationary: Boolean,
+    )
+
+    fun smoothed(points: List<TrackPointEntity>): List<Sample> {
+        val smoother = SpeedSmoother()
+        val out = ArrayList<Sample>(points.size)
+
+        var prev: TrackPointEntity? = null
+        for (p in points) {
+            if (p.startsNewSegment) {
+                // 中断处重新开窗，避免把断点两端的位移当成速度
+                smoother.reset()
+                prev = null
+            }
+
+            val sample = SpeedSampler.sample(
+                previousPoint = prev?.let { Wgs84(it.lat, it.lng) },
+                previousTimeMillis = prev?.recordedAt,
+                currentPoint = Wgs84(p.lat, p.lng),
+                currentTimeMillis = p.recordedAt,
+                systemSpeedMps = p.speedMps,
+                accuracyMeters = p.accuracyM ?: -1f,
+            )
+
+            if (sample == null) {
+                out.add(Sample(null, false))
+            } else {
+                val snap = smoother.add(sample, p.recordedAt)
+                out.add(Sample(snap.smoothedMps, snap.stationary))
+            }
+            prev = p
+        }
+        return out
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/rules/TripInvariants.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TripStatus
+
+/**
+ * 数据一致性校验。
+ *
+ * 分段规则：
+ * - seq 必须 0..N-1 连续
+ * - 分段按 seq 严格递增、互不重叠、区间内连续
+ * - 每个点要么属于某个 segment，要么属于某个停留（停留是空洞）
+ * - **允许** segment 跨过 startsNewSegment=true 的点：那个标记只影响画线断开，
+ *   不强制分段在这里切开
+ *
+ * 暂停规则：
+ * - PAUSED    : 有且仅有一条未闭合
+ * - RECORDING : 不允许未闭合
+ * - FINISHED  : 全部闭合，且 endedAt 非空
+ */
+object TripInvariants {
+
+    data class Violation(val code: String, val message: String)
+
+    fun validateSegments(
+        points: List<TrackPointEntity>,
+        segments: List<SegmentDraft>,
+        stays: List<StayDraft>,
+    ): List<Violation> {
+        val out = ArrayList<Violation>()
+        if (points.isEmpty()) return out
+
+        // seq 必须从 0 开始、逐 1 递增
+        points.forEachIndexed { index, p ->
+            if (p.seq != index) {
+                out.add(Violation("SEQ_NOT_DENSE", "第 $index 个点的 seq 是 ${p.seq}，应为 $index"))
+            }
+        }
+        val maxSeq = points.size - 1
+
+        // 分段自身：范围合法 + 严格递增 + 不重叠
+        var prevEnd = -1
+        for (seg in segments) {
+            if (seg.startSeq > seg.endSeq) {
+                out.add(Violation("SEGMENT_RANGE", "分段 ${seg.startSeq}..${seg.endSeq} 起点大于终点"))
+            }
+            if (seg.startSeq < 0 || seg.endSeq > maxSeq) {
+                out.add(Violation("SEGMENT_RANGE", "分段 ${seg.startSeq}..${seg.endSeq} 越界（0..$maxSeq）"))
+            }
+            if (seg.startSeq <= prevEnd) {
+                out.add(Violation("SEGMENT_OVERLAP", "分段 ${seg.startSeq}..${seg.endSeq} 与前一段重叠"))
+            }
+            prevEnd = maxOf(prevEnd, seg.endSeq)
+        }
+
+        // 分段与停留不能重叠
+        for (seg in segments) {
+            for (stay in stays) {
+                val overlap = seg.startSeq <= stay.endSeq && stay.startSeq <= seg.endSeq
+                if (overlap) {
+                    out.add(
+                        Violation(
+                            "SEGMENT_OVERLAPS_STAY",
+                            "分段 ${seg.startSeq}..${seg.endSeq} 与停留 ${stay.startSeq}..${stay.endSeq} 重叠",
+                        ),
+                    )
+                }
+            }
+        }
+
+        // 全覆盖：每个点要么在分段里，要么在停留里
+        val covered = BooleanArray(points.size)
+        for (seg in segments) {
+            for (k in seg.startSeq..seg.endSeq) {
+                if (k in covered.indices) covered[k] = true
+            }
+        }
+        for (stay in stays) {
+            for (k in stay.startSeq..stay.endSeq) {
+                if (k in covered.indices) covered[k] = true
+            }
+        }
+        points.indices.forEach { k ->
+            if (!covered[k]) out.add(Violation("POINT_NOT_COVERED", "点 seq=$k 既不在分段也不在停留里"))
+        }
+
+        return out
+    }
+
+    fun validatePauses(
+        status: TripStatus,
+        endedAt: Long?,
+        /** (pausedAt, resumedAt?)；resumedAt 为 null 即未闭合 */
+        pauses: List<Pair<Long, Long?>>,
+    ): List<Violation> {
+        val out = ArrayList<Violation>()
+        val open = pauses.count { it.second == null }
+
+        when (status) {
+            TripStatus.RECORDING -> if (open != 0) {
+                out.add(Violation("PAUSE_OPEN_WHILE_RECORDING", "记录中却有 $open 条未闭合的暂停"))
+            }
+
+            TripStatus.PAUSED -> if (open != 1) {
+                out.add(Violation("PAUSE_COUNT_INVALID", "暂停中应恰好 1 条未闭合暂停，实际 $open 条"))
+            }
+
+            TripStatus.FINISHED -> {
+                if (open != 0) {
+                    out.add(Violation("PAUSE_OPEN_WHEN_FINISHED", "已结束仍有 $open 条未闭合的暂停"))
+                }
+                if (endedAt == null) {
+                    out.add(Violation("ENDED_AT_MISSING", "已结束但 endedAt 为空"))
+                }
+            }
+        }
+        return out
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/rules/TripStats.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TripEntity
+
+data class TripStats(
+    val distanceMeters: Double,
+    val activeMillis: Long,
+    val maxSpeedMps: Double,
+    val avgSpeedMps: Double,
+    val pointCount: Int,
+    /** 中断次数（暂停 / 丢信号） */
+    val gapCount: Int,
+)
+
+/**
+ * 行程统计。全部实时算，不读缓存字段。
+ *
+ * 距离：跳过 startsNewSegment 的点对——中断两端不能连成直线算距离。
+ * 时长：走 DurationCalc，按暂停记录扣。
+ * 速度：优先用系统给的点速度；没有就用相邻点算，但跳过中断处。
+ */
+object TripStatsCalculator {
+
+    fun compute(
+        trip: TripEntity,
+        points: List<TrackPointEntity>,
+        pauses: List<Pair<Long, Long?>>,
+        now: Long,
+    ): TripStats {
+        var distance = 0.0
+        var maxSpeed = 0.0
+        var gapCount = 0
+
+        var prev: TrackPointEntity? = null
+        for (p in points) {
+            if (p.startsNewSegment) gapCount++
+            val last = prev
+            if (last != null && !p.startsNewSegment) {
+                val d = Wgs84(last.lat, last.lng).distanceTo(Wgs84(p.lat, p.lng))
+                distance += d
+                val dtSeconds = (p.recordedAt - last.recordedAt) / 1000.0
+                if (dtSeconds > 0.5) {
+                    val computed = d / dtSeconds
+                    if (computed in 0.0..40.0 && computed > maxSpeed) maxSpeed = computed
+                }
+            }
+            p.speedMps?.let { if (it > maxSpeed && it < 40f) maxSpeed = it.toDouble() }
+            prev = p
+        }
+
+        val active = DurationCalc.activeMillis(
+            startedAt = trip.startedAt,
+            endedAt = trip.endedAt,
+            status = trip.status,
+            pauses = pauses,
+            now = now,
+        )
+
+        val avg = if (active > 1000) distance / (active / 1000.0) else 0.0
+
+        return TripStats(
+            distanceMeters = distance,
+            activeMillis = active,
+            maxSpeedMps = maxSpeed,
+            avgSpeedMps = avg,
+            pointCount = points.size,
+            gapCount = gapCount,
+        )
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/rules/Tuning.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+/**
+ * 所有可调参数集中在这里。
+ *
+ * 以后你说「采样太密费电」「停留判定太松」，只改这个文件，不进业务逻辑。
+ */
+object Tuning {
+
+    object Sampling {
+        /** 骑行/开车：≥5 m/s（18 km/h） */
+        const val FAST_SPEED_MPS = 5f
+
+        /**
+         * 走路与慢速的分界。正常步行约 1.0~1.4 m/s（3.6~5.0 km/h），
+         * 取 1.4 作为上界；第 5 步做交通方式分类时直接复用这个数。
+         */
+        const val WALK_SPEED_MPS = 1.4f
+
+        const val FAST_INTERVAL_MS = 1000L
+        const val NORMAL_INTERVAL_MS = 2000L
+        const val SLOW_INTERVAL_MS = 5000L
+    }
+
+    object Filter {
+        /** 精度半径差于此值的点直接丢弃，不入库 */
+        const val MAX_ACCURACY_M = 100f
+
+        /** 超过此速度基本是跳点，丢弃 */
+        const val MAX_SPEED_MPS = 60f
+    }
+
+    object Segment {
+        // ---- 速度分档：分段分类 与 地图「按速度着色」共用这一套，不要各写一份 ----
+        /** 走路上限（含）。约 8 km/h，覆盖散步到快走 */
+        const val WALK_MAX_MPS = 2.2
+
+        /** 骑车上限（含）。约 25 km/h，超过就算车 */
+        const val BIKE_MAX_MPS = 7.0
+
+        // ---- 停留 ----
+        /** 低于此速度视为静止候选 */
+        const val STOP_SPEED_MPS = 0.8
+
+        /** 连续静止超过此时长才记为停留（20 秒，能滤掉等红灯这类短暂停顿） */
+        const val STOP_MIN_DURATION_MS = 20_000L
+
+        // ---- 中断 ----
+        /** 相邻两点时间差超过此值视为信号中断 */
+        const val GAP_SPLIT_MS = 120_000L
+
+        // ---- 段合并 ----
+        /** 短于此长度的段并入相邻段，避免切得太碎 */
+        const val MIN_SEGMENT_MS = 15_000L
+
+        /** 分段前对速度做中位数平滑的窗口 */
+        const val SMOOTH_WINDOW = 5
+    }
+
+    object Recording {
+        /** 冷启动测量：超过这个时长要提示「正在搜星」 */
+        const val FIRST_FIX_SLOW_MS = 20_000L
+
+        /** 通知栏刷新间隔 */
+        const val TICK_MS = 1000L
+
+        /** 轨迹点攒够多少条落一次库（每条也落，这里只是留个扩展点） */
+        const val BATCH_SIZE = 1
+    }
+
+    /**
+     * 瞬时速度显示。
+     *
+     * 只影响「显示」：地图按速度着色用的是原始值，不走这里的平滑。
+     */
+    object SpeedDisplay {
+        /** 中位数窗口：取最近几个有效速度 */
+        const val WINDOW_SIZE = 5
+
+        /** 低于这个速度算「可能静止」 */
+        const val STATIONARY_SPEED_MPS = 0.5
+
+        /** 连续低于阈值超过这么久，才判定为静止（避免走走停停时闪烁） */
+        const val STATIONARY_HOLD_MS = 5_000L
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/ai/AiClient.kt -->
+
+```kotlin
+package com.llyytt.path.data.ai
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
+
+data class ChatTurn(val role: String, val content: String)
+
+sealed interface AiResult {
+    data class Success(val text: String) : AiResult
+    data class Failure(val message: String, val statusCode: Int? = null) : AiResult
+}
+
+/**
+ * OpenAI 兼容接口的最小客户端。
+ *
+ * 三条硬约束：
+ * 1. **不加任何 OkHttp logging interceptor** —— 那玩意儿默认会把 Authorization 头打进 logcat。
+ * 2. Key 只出现在请求头里，不进 URL、不进 body、不进日志。
+ * 3. 连接 10 秒 / 读 60 秒，超时按"网络超时"上报。
+ */
+class AiClient {
+
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS)
+        .build()
+
+    suspend fun chat(config: AiConfig, turns: List<ChatTurn>): AiResult = withContext(Dispatchers.IO) {
+        val url = config.baseUrl.trimEnd('/') + "/chat/completions"
+
+        val payload = JSONObject().apply {
+            put("model", config.model)
+            put("temperature", 0.3)
+            put(
+                "messages",
+                JSONArray().apply {
+                    turns.forEach {
+                        put(JSONObject().put("role", it.role).put("content", it.content))
+                    }
+                },
+            )
+        }.toString()
+
+        val request = Request.Builder()
+            .url(url)
+            .header("Authorization", "Bearer " + config.apiKey)
+            .post(payload.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+
+        try {
+            client.newCall(request).execute().use { response ->
+                val raw = response.body?.string().orEmpty()
+                when {
+                    response.isSuccessful -> {
+                        val content = runCatching {
+                            JSONObject(raw)
+                                .getJSONArray("choices")
+                                .getJSONObject(0)
+                                .getJSONObject("message")
+                                .getString("content")
+                        }.getOrNull()
+                        if (content.isNullOrBlank()) {
+                            AiResult.Failure("响应格式不正确（没有 choices[0].message.content）", response.code)
+                        } else {
+                            AiResult.Success(content)
+                        }
+                    }
+
+                    response.code == 401 -> AiResult.Failure("Key 无效或已过期", 401)
+                    response.code == 429 -> AiResult.Failure("请求太频繁", 429)
+                    else -> AiResult.Failure("服务返回 HTTP ${response.code}", response.code)
+                }
+            }
+        } catch (e: SocketTimeoutException) {
+            AiResult.Failure("网络超时")
+        } catch (e: IOException) {
+            AiResult.Failure("网络错误：${e.message ?: e.javaClass.simpleName}")
+        } catch (e: Exception) {
+            AiResult.Failure("请求失败：${e.message ?: e.javaClass.simpleName}")
+        }
+    }
+
+    private companion object {
+        val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/ai/AiSettingsStore.kt -->
+
+```kotlin
+package com.llyytt.path.data.ai
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+private val Context.aiDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "ai_settings",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
+
+/** AI 配置。apiKey 是解密后的明文，只活在内存里。 */
+data class AiConfig(
+    val baseUrl: String = "",
+    val model: String = "",
+    val apiKey: String = "",
+    val disclosureAccepted: Boolean = false,
+) {
+    val isReady: Boolean
+        get() = baseUrl.isNotBlank() && model.isNotBlank() && apiKey.isNotBlank()
+}
+
+/**
+ * AI 设置的持久化。
+ *
+ * 存哪：DataStore（不是 SharedPreferences）。
+ * Key 怎么存：只存 [KeyCrypto] 加密后的 Base64 密文，读出来才解密。
+ * 也就是说，磁盘上、备份里、`adb backup` 出来的都只有密文，
+ * 而解密密钥在 Android Keystore 里，拷到别的设备上解不开。
+ */
+class AiSettingsStore(private val context: Context) {
+
+    val config: Flow<AiConfig> = context.aiDataStore.data.map { prefs ->
+        val blob = prefs[KEY_KEY].orEmpty()
+        AiConfig(
+            baseUrl = prefs[KEY_BASE_URL].orEmpty(),
+            model = prefs[KEY_MODEL].orEmpty(),
+            apiKey = if (blob.isEmpty()) "" else KeyCrypto.decrypt(blob).orEmpty(),
+            disclosureAccepted = prefs[KEY_DISCLOSURE] ?: false,
+        )
+    }
+
+    /** 保存。apiKey 传空字符串表示"不修改已有 Key"。 */
+    suspend fun save(baseUrl: String, model: String, apiKey: String) {
+        context.aiDataStore.edit { prefs ->
+            prefs[KEY_BASE_URL] = baseUrl
+            prefs[KEY_MODEL] = model
+            if (apiKey.isNotBlank()) {
+                prefs[KEY_KEY] = KeyCrypto.encrypt(apiKey)
+            }
+        }
+    }
+
+    suspend fun acceptDisclosure() {
+        context.aiDataStore.edit { it[KEY_DISCLOSURE] = true }
+    }
+
+    suspend fun clear() {
+        context.aiDataStore.edit { it.clear() }
+        KeyCrypto.deleteKey()
+    }
+
+    private companion object {
+        val KEY_BASE_URL = stringPreferencesKey("base_url")
+        val KEY_MODEL = stringPreferencesKey("model")
+        val KEY_KEY = stringPreferencesKey("key_blob")
+        val KEY_DISCLOSURE = booleanPreferencesKey("disclosure_accepted")
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/ai/KeyCrypto.kt -->
+
+```kotlin
+package com.llyytt.path.data.ai
+
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+
+/**
+ * AI Key 的本地加密。
+ *
+ * 用 Android Keystore 里的 AES-256-GCM：
+ * - 密钥永远不出 TEE/StrongBox，App 只能"用"它，读不到明文
+ * - 每次加密随机 IV，IV 拼在密文前面一起 Base64
+ * - 不需要用户认证（setUserAuthenticationRequired(false)），锁屏也能用
+ *
+ * 刻意不用 EncryptedSharedPreferences —— 那个库已经停止维护，且行为不透明。
+ */
+object KeyCrypto {
+
+    private const val ALIAS = "xingji_ai_key"
+    private const val ANDROID_KEYSTORE = "AndroidKeyStore"
+    private const val TRANSFORMATION = "AES/GCM/NoPadding"
+    private const val IV_LENGTH = 12
+    private const val TAG_BITS = 128
+
+    private fun keyStore(): KeyStore =
+        KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+
+    private fun getOrCreateKey(): SecretKey {
+        val store = keyStore()
+        val existing = (store.getEntry(ALIAS, null) as? KeyStore.SecretKeyEntry)?.secretKey
+        if (existing != null) return existing
+
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .setUserAuthenticationRequired(false)
+                .build(),
+        )
+        return generator.generateKey()
+    }
+
+    /** 加密成 Base64(IV || 密文)。失败抛异常，调用方自己处理。 */
+    fun encrypt(plain: String): String {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+        val cipherText = cipher.doFinal(plain.toByteArray(Charsets.UTF_8))
+        val iv = cipher.iv
+        val combined = ByteArray(iv.size + cipherText.size)
+        iv.copyInto(combined, 0)
+        cipherText.copyInto(combined, iv.size)
+        return Base64.encodeToString(combined, Base64.NO_WRAP)
+    }
+
+    /** 解密失败返回 null（比如 Keystore 里密钥被清掉）。 */
+    fun decrypt(blob: String): String? = runCatching {
+        val combined = Base64.decode(blob, Base64.NO_WRAP)
+        if (combined.size <= IV_LENGTH) return null
+        val iv = combined.copyOfRange(0, IV_LENGTH)
+        val cipherText = combined.copyOfRange(IV_LENGTH, combined.size)
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(TAG_BITS, iv))
+        String(cipher.doFinal(cipherText), Charsets.UTF_8)
+    }.getOrNull()
+
+    /** 清空设置时把密钥也删掉。 */
+    fun deleteKey() {
+        runCatching {
+            val store = keyStore()
+            if (store.containsAlias(ALIAS)) store.deleteEntry(ALIAS)
+        }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/ai/TripContextBuilder.kt -->
+
+```kotlin
+package com.llyytt.path.data.ai
+
+import com.llyytt.path.core.format.Fmt
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TransportMode
+import com.llyytt.path.data.repo.TripDetail
+import com.llyytt.path.data.repo.TripListItem
+
+/**
+ * 给 AI 的上下文：**只发摘要，不发全量轨迹点**。
+ *
+ * 一条行程摘要约 60~90 个汉字，10 条也就几百字；
+ * 全量点动辄几千个坐标，既费 token 又没必要——AI 回答"我昨天走了多久"不需要每个 GPS 点。
+ */
+object TripContextBuilder {
+
+    fun systemPrompt(): String = """
+        你是「行迹」App 里的出行助手。用户的数据全部存在他自己的手机里。
+        你只能根据下面提供的行程摘要回答，不要编造不存在的数据；
+        如果摘要里没有能回答的信息，直接说"记录里没有这项数据"。
+        回答用简体中文，简短、具体，能引用数字就引用数字。
+    """.trimIndent()
+
+    /** 多条行程的摘要，一行一条。 */
+    fun summarizeTrips(items: List<TripListItem>): String {
+        if (items.isEmpty()) return "（用户还没有任何行程记录）"
+        return buildString {
+            appendLine("## 最近 ${items.size} 条行程")
+            items.forEach { item ->
+                val trip = item.trip
+                val stats = item.stats
+                appendLine(
+                    "· ${Fmt.dateTime(trip.startedAt)} 开始，" +
+                        "时长 ${Fmt.duration(stats.activeMillis)}，" +
+                        "距离 ${Fmt.distance(stats.distanceMeters)}，" +
+                        "均速 ${Fmt.speed(stats.avgSpeedMps)}，" +
+                        "分段 ${item.segmentCount} 段，停留 ${item.stayCount} 个" +
+                        (stats.gapCount.takeIf { it > 0 }?.let { "，信号中断 $it 次" } ?: ""),
+                )
+            }
+        }
+    }
+
+    /** 单条行程的分段摘要，用户问到具体行程时用。 */
+    fun summarizeDetail(detail: TripDetail): String = buildString {
+        appendLine("## 最近一条行程的分段详情（${Fmt.dateTime(detail.trip.startedAt)}）")
+        if (detail.segments.isEmpty()) {
+            appendLine("（这条行程还没有分段）")
+        } else {
+            detail.segments.forEachIndexed { index, seg ->
+                val start = detail.points.getOrNull(seg.startPointSeq)?.recordedAt
+                val end = detail.points.getOrNull(seg.endPointSeq)?.recordedAt
+                val duration = if (start != null && end != null) end - start else 0L
+                val distance = distanceOf(detail.points, seg.startPointSeq, seg.endPointSeq)
+                appendLine(
+                    "· 第 ${index + 1} 段 ${modeLabel(seg.mode)}，" +
+                        "从 ${start?.let { Fmt.clock(it) } ?: "?"} 到 ${end?.let { Fmt.clock(it) } ?: "?"}，" +
+                        "持续 ${Fmt.duration(duration)}，距离 ${Fmt.distance(distance)}",
+                )
+            }
+        }
+        if (detail.stays.isNotEmpty()) {
+            append("停留点：")
+            append(detail.stays.joinToString("；") {
+                "${Fmt.clock(it.arriveAt)}-${it.leaveAt?.let { end -> Fmt.clock(end) } ?: "至今"}"
+            })
+            appendLine()
+        }
+    }
+
+    private fun distanceOf(points: List<TrackPointEntity>, startSeq: Int, endSeq: Int): Double {
+        if (endSeq <= startSeq) return 0.0
+        var sum = 0.0
+        for (seq in startSeq until endSeq) {
+            val a = points.getOrNull(seq) ?: continue
+            val b = points.getOrNull(seq + 1) ?: continue
+            sum += com.llyytt.path.core.geo.Wgs84(a.lat, a.lng)
+                .distanceTo(com.llyytt.path.core.geo.Wgs84(b.lat, b.lng))
+        }
+        return sum
+    }
+
+    private fun modeLabel(mode: TransportMode): String = when (mode) {
+        TransportMode.WALK -> "走路"
+        TransportMode.BIKE -> "骑车"
+        TransportMode.CAR -> "坐车"
+        TransportMode.UNKNOWN -> "未分类"
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/ai/UrlValidator.kt -->
+
+```kotlin
+package com.llyytt.path.data.ai
+
+/**
+ * BaseURL 校验。
+ *
+ * 规则是刻意的：
+ * - 空、非法、缺 scheme 一律拒绝（不帮用户补 http://，免得猜错）
+ * - https 直接过
+ * - http 不直接过，要 UI 弹出"明文传输"警告，用户显式确认后才放行
+ */
+object UrlValidator {
+
+    sealed interface Outcome {
+        data class Https(val normalized: String) : Outcome
+        data class Http(val normalized: String) : Outcome
+        data class Invalid(val reason: String) : Outcome
+    }
+
+    fun validate(raw: String): Outcome {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return Outcome.Invalid("请填写 BaseURL")
+
+        val lower = trimmed.lowercase()
+        if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+            return Outcome.Invalid("必须以 http:// 或 https:// 开头")
+        }
+
+        val uri = runCatching { java.net.URI(trimmed) }.getOrNull()
+            ?: return Outcome.Invalid("URL 格式不正确")
+        if (uri.host.isNullOrBlank()) return Outcome.Invalid("缺少主机名")
+        if (uri.rawQuery != null) return Outcome.Invalid("BaseURL 不要带查询参数")
+
+        val normalized = trimmed.trimEnd('/')
+        val isHttps = lower.startsWith("https://")
+        // scheme 统一小写，路径部分原样保留（大小写敏感的路径不能被改）
+        val rest = normalized.substringAfter("://")
+        val canonical = (if (isHttps) "https://" else "http://") + rest
+        return if (isHttps) Outcome.Https(canonical) else Outcome.Http(canonical)
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/db/AiChatEntities.kt -->
+
+```kotlin
+package com.llyytt.path.data.db
+
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.PrimaryKey
+import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
+
+enum class ChatRole { USER, ASSISTANT }
+
+/**
+ * AI 聊天记录。
+ *
+ * 只存本地，不进导出文件；清空数据时随行程一起删。
+ * tripId 可选：这条消息如果是在某条行程的上下文里问的，就记下来。
+ */
+@Entity(tableName = "ai_chat_message")
+data class AiChatMessageEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val role: ChatRole,
+    val content: String,
+    val createdAt: Long = System.currentTimeMillis(),
+    val tripId: Long? = null,
+)
+
+@Dao
+interface AiChatDao {
+
+    @Insert
+    suspend fun insert(message: AiChatMessageEntity): Long
+
+    @Query("SELECT * FROM ai_chat_message ORDER BY createdAt ASC, id ASC")
+    fun observeAll(): Flow<List<AiChatMessageEntity>>
+
+    @Query("SELECT * FROM ai_chat_message ORDER BY createdAt DESC, id DESC LIMIT :limit")
+    suspend fun recent(limit: Int): List<AiChatMessageEntity>
+
+    @Query("DELETE FROM ai_chat_message")
+    suspend fun deleteAll()
+
+    @Query("DELETE FROM ai_chat_message WHERE tripId = :tripId")
+    suspend fun deleteByTrip(tripId: Long)
+}
+
+class ChatRoleConverter {
+    @androidx.room.TypeConverter
+    fun fromRole(value: ChatRole): String = value.name
+
+    @androidx.room.TypeConverter
+    fun toRole(value: String): ChatRole =
+        runCatching { ChatRole.valueOf(value) }.getOrDefault(ChatRole.USER)
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/db/AppDatabase.kt -->
+
+```kotlin
+package com.llyytt.path.data.db
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+@Database(
+    entities = [
+        TripEntity::class,
+        TrackPointEntity::class,
+        TripSegmentEntity::class,
+        StayPointEntity::class,
+        TripPauseEntity::class,
+        AiChatMessageEntity::class,
+    ],
+    version = 3,
+    exportSchema = true,
+)
+@TypeConverters(Converters::class, ChatRoleConverter::class)
+abstract class AppDatabase : RoomDatabase() {
+
+    abstract fun tripDao(): TripDao
+    abstract fun trackPointDao(): TrackPointDao
+    abstract fun tripSegmentDao(): TripSegmentDao
+    abstract fun stayPointDao(): StayPointDao
+    abstract fun tripPauseDao(): TripPauseDao
+    abstract fun aiChatDao(): AiChatDao
+
+    companion object {
+        private const val DB_NAME = "xingji.db"
+
+        /**
+         * 1 -> 2 的开发期迁移：丢表重建（v1 从未对外发布，只有测试机有数据）。
+         * 第一次正式发版后必须删掉，换成真正保留数据的迁移。
+         */
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS track_point")
+                db.execSQL("DROP TABLE IF EXISTS trip_segment")
+                db.execSQL("DROP TABLE IF EXISTS stay_point")
+                db.execSQL("DROP TABLE IF EXISTS trip")
+                db.execSQL("DROP TABLE IF EXISTS trip_pause")
+            }
+        }
+
+        /** 2 -> 3：新增 AI 聊天表。不动已有数据。 */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `ai_chat_message` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `role` TEXT NOT NULL,
+                        `content` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `tripId` INTEGER
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        @Volatile
+        private var instance: AppDatabase? = null
+
+        fun get(context: Context): AppDatabase =
+            instance ?: synchronized(this) {
+                instance ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    DB_NAME,
+                )
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .build()
+                    .also { instance = it }
+            }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/db/Daos.kt -->
+
+```kotlin
+package com.llyytt.path.data.db
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface TripDao {
+
+    @Insert
+    suspend fun insert(trip: TripEntity): Long
+
+    @Update
+    suspend fun update(trip: TripEntity)
+
+    @Query("SELECT * FROM trip WHERE id = :id")
+    suspend fun findById(id: Long): TripEntity?
+
+    @Query("SELECT * FROM trip ORDER BY startedAt DESC")
+    fun observeAll(): Flow<List<TripEntity>>
+
+    @Query("SELECT * FROM trip ORDER BY startedAt DESC LIMIT :limit")
+    suspend fun listOnce(limit: Int): List<TripEntity>
+
+    /** 进程被杀后重启时用它找回「没结束的行程」。最多一条（由业务层保证）。 */
+    @Query("SELECT * FROM trip WHERE status != 'FINISHED' ORDER BY startedAt DESC LIMIT 1")
+    suspend fun findUnfinished(): TripEntity?
+
+    @Query("SELECT * FROM trip WHERE status != 'FINISHED' ORDER BY startedAt DESC LIMIT 1")
+    fun observeUnfinished(): Flow<TripEntity?>
+
+    @Query("SELECT COUNT(*) FROM trip WHERE status != 'FINISHED'")
+    suspend fun countUnfinished(): Int
+
+    /**
+     * 删行程。子表（track_point / trip_segment / stay_point / trip_pause）
+     * 都声明了 onDelete = CASCADE，所以这一条 SQL 会连带删干净。
+     */
+    @Query("DELETE FROM trip WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("UPDATE trip SET status = 'FINISHED', endedAt = :endedAt, updatedAt = :endedAt WHERE status != 'FINISHED'")
+    suspend fun finishAllUnfinished(endedAt: Long)
+
+    @Query("DELETE FROM trip")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface TrackPointDao {
+
+    @Insert
+    suspend fun insert(point: TrackPointEntity): Long
+
+    @Insert
+    suspend fun insertAll(points: List<TrackPointEntity>)
+
+    @Query("SELECT * FROM track_point WHERE tripId = :tripId ORDER BY seq ASC")
+    suspend fun getByTrip(tripId: Long): List<TrackPointEntity>
+
+    @Query("SELECT * FROM track_point WHERE tripId = :tripId ORDER BY seq ASC")
+    fun observeByTrip(tripId: Long): Flow<List<TrackPointEntity>>
+
+    @Query("SELECT * FROM track_point WHERE tripId = :tripId ORDER BY seq DESC LIMIT 1")
+    suspend fun lastPoint(tripId: Long): TrackPointEntity?
+
+    @Query("SELECT COUNT(*) FROM track_point WHERE tripId = :tripId")
+    suspend fun count(tripId: Long): Int
+
+    @Query("SELECT MAX(seq) FROM track_point WHERE tripId = :tripId")
+    suspend fun maxSeq(tripId: Long): Int?
+
+    @Query("DELETE FROM track_point WHERE tripId = :tripId")
+    suspend fun deleteByTrip(tripId: Long)
+}
+
+@Dao
+interface TripSegmentDao {
+
+    @Insert
+    suspend fun insertAll(segments: List<TripSegmentEntity>)
+
+    @Insert
+    suspend fun insert(segment: TripSegmentEntity): Long
+
+    @Update
+    suspend fun update(segment: TripSegmentEntity)
+
+    @Query("DELETE FROM trip_segment WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM trip_segment WHERE id = :id")
+    suspend fun findById(id: Long): TripSegmentEntity?
+
+    @Query("SELECT * FROM trip_segment WHERE tripId = :tripId ORDER BY seq ASC")
+    suspend fun getByTrip(tripId: Long): List<TripSegmentEntity>
+
+    @Query("SELECT COUNT(*) FROM trip_segment WHERE tripId = :tripId")
+    suspend fun countByTrip(tripId: Long): Int
+
+    @Query("SELECT * FROM trip_segment WHERE tripId = :tripId ORDER BY seq ASC")
+    fun observeByTrip(tripId: Long): Flow<List<TripSegmentEntity>>
+
+    @Query("DELETE FROM trip_segment WHERE tripId = :tripId")
+    suspend fun deleteByTrip(tripId: Long)
+}
+
+@Dao
+interface StayPointDao {
+
+    @Insert
+    suspend fun insert(point: StayPointEntity): Long
+
+    @Insert
+    suspend fun insertAll(points: List<StayPointEntity>)
+
+    @Query("SELECT * FROM stay_point WHERE tripId = :tripId ORDER BY arriveAt ASC")
+    suspend fun getByTrip(tripId: Long): List<StayPointEntity>
+
+    @Query("SELECT COUNT(*) FROM stay_point WHERE tripId = :tripId")
+    suspend fun countByTrip(tripId: Long): Int
+
+    @Query("SELECT * FROM stay_point WHERE tripId = :tripId ORDER BY arriveAt ASC")
+    fun observeByTrip(tripId: Long): Flow<List<StayPointEntity>>
+
+    @Query("DELETE FROM stay_point WHERE tripId = :tripId")
+    suspend fun deleteByTrip(tripId: Long)
+}
+
+@Dao
+interface TripPauseDao {
+
+    @Insert
+    suspend fun insert(pause: TripPauseEntity): Long
+
+    /** 暂停中那条（resumedAt = null）。正常情况最多一条。 */
+    @Query("SELECT * FROM trip_pause WHERE tripId = :tripId AND resumedAt IS NULL ORDER BY pausedAt DESC LIMIT 1")
+    suspend fun findOpen(tripId: Long): TripPauseEntity?
+
+    @Query("SELECT * FROM trip_pause WHERE tripId = :tripId ORDER BY pausedAt ASC")
+    suspend fun getByTrip(tripId: Long): List<TripPauseEntity>
+
+    /** 把所有未闭合的暂停一起闭合（修复脏状态用） */
+    @Query("UPDATE trip_pause SET resumedAt = :resumedAt WHERE tripId = :tripId AND resumedAt IS NULL")
+    suspend fun closeAllOpen(tripId: Long, resumedAt: Long)
+
+    @Query("DELETE FROM trip_pause WHERE tripId = :tripId")
+    suspend fun deleteByTrip(tripId: Long)
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/db/Entities.kt -->
+
+```kotlin
+package com.llyytt.path.data.db
+
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+
+/** 行程状态。 */
+enum class TripStatus { RECORDING, PAUSED, FINISHED }
+
+/**
+ * 交通方式。
+ *
+ * 刻意**没有 STAY**：停留不是一种「交通方式」，它由 stay_point 独立表达。
+ * UNKNOWN 表示分段算法还没跑过。
+ */
+enum class TransportMode { UNKNOWN, WALK, BIKE, CAR }
+
+/** 这个点是哪个定位源产出的。将来接入高德定位后，坐标变换可审计。 */
+enum class PointSource { GNSS, AMAP_LOCATION }
+
+/**
+ * 行程。
+ *
+ * 不缓存距离和时长：距离从 track_point 实时算，时长按 DurationCalc 从
+ * trip 的起止时间 + trip_pause 算。理由：手动修正分段后数字必须自动正确，
+ * 缓存字段早晚会和真值漂移。
+ */
+@Entity(tableName = "trip")
+data class TripEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val startedAt: Long,
+    val endedAt: Long? = null,
+    val status: TripStatus = TripStatus.RECORDING,
+    val title: String? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+)
+
+/**
+ * 轨迹点。
+ *
+ * 不变量：同一 trip 内 seq 必须 0..N-1 连续，入库后不修改、不删除。
+ * 坐标永远是 WGS84。
+ */
+@Entity(
+    tableName = "track_point",
+    foreignKeys = [
+        ForeignKey(
+            entity = TripEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["tripId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["tripId", "seq"], unique = true)],
+)
+data class TrackPointEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val tripId: Long,
+    val seq: Int,
+    val lat: Double,
+    val lng: Double,
+    val altitudeM: Double? = null,
+    val speedMps: Float? = null,
+    val bearingDeg: Float? = null,
+    val accuracyM: Float? = null,
+    val recordedAt: Long,
+    val source: PointSource = PointSource.GNSS,
+    /**
+     * 这个点之前有中断（暂停或丢信号）。**只影响画线断开**，
+     * 不强制这里必须切分段。
+     */
+    val startsNewSegment: Boolean = false,
+)
+
+/**
+ * 分段结果。用「点索引范围」关联，不用外键列表。
+ *
+ * 拆分 = 改两行数字；合并 = 删一行改一行数字。track_point 永远不动。
+ * 唯一约束放在 (tripId, startPointSeq)：同一行程里不允许两段起点相同。
+ * 不对 (tripId, seq) 设唯一——拆分合并时 seq 要重排，唯一约束会很别扭。
+ */
+@Entity(
+    tableName = "trip_segment",
+    foreignKeys = [
+        ForeignKey(
+            entity = TripEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["tripId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [
+        Index(value = ["tripId", "startPointSeq"], unique = true),
+        Index(value = ["tripId", "seq"]),
+    ],
+)
+data class TripSegmentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val tripId: Long,
+    val seq: Int,
+    val mode: TransportMode,
+    /** 起点 seq（含） */
+    val startPointSeq: Int,
+    /** 终点 seq（含） */
+    val endPointSeq: Int,
+    val manuallyEdited: Boolean = false,
+)
+
+/** 停留点。segment 里没有 STAY，停留只在这里。 */
+@Entity(
+    tableName = "stay_point",
+    foreignKeys = [
+        ForeignKey(
+            entity = TripEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["tripId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["tripId", "arriveAt"])],
+)
+data class StayPointEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val tripId: Long,
+    val lat: Double,
+    val lng: Double,
+    val radiusMeters: Double,
+    val arriveAt: Long,
+    val leaveAt: Long? = null,
+)
+
+/**
+ * 暂停记录。
+ *
+ * 状态不变量（第 5 步校验函数会检查）：
+ * - PAUSED 时：有且仅有一条 resumedAt = null 的记录
+ * - RECORDING 时：不允许存在 resumedAt = null 的记录
+ * - FINISHED 时：所有记录都已闭合，且 trip.endedAt 非空
+ */
+@Entity(
+    tableName = "trip_pause",
+    foreignKeys = [
+        ForeignKey(
+            entity = TripEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["tripId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["tripId", "pausedAt"])],
+)
+data class TripPauseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val tripId: Long,
+    val pausedAt: Long,
+    /** null = 还在暂停中 */
+    val resumedAt: Long? = null,
+)
+
+class Converters {
+    @TypeConverter
+    fun tripStatusToString(value: TripStatus): String = value.name
+
+    @TypeConverter
+    fun stringToTripStatus(value: String): TripStatus =
+        runCatching { TripStatus.valueOf(value) }.getOrDefault(TripStatus.FINISHED)
+
+    @TypeConverter
+    fun transportModeToString(value: TransportMode): String = value.name
+
+    @TypeConverter
+    fun stringToTransportMode(value: String): TransportMode =
+        runCatching { TransportMode.valueOf(value) }.getOrDefault(TransportMode.UNKNOWN)
+
+    @TypeConverter
+    fun pointSourceToString(value: PointSource): String = value.name
+
+    @TypeConverter
+    fun stringToPointSource(value: String): PointSource =
+        runCatching { PointSource.valueOf(value) }.getOrDefault(PointSource.GNSS)
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/repo/AiChatRepository.kt -->
+
+```kotlin
+package com.llyytt.path.data.repo
+
+import com.llyytt.path.data.db.AiChatDao
+import com.llyytt.path.data.db.AiChatMessageEntity
+import com.llyytt.path.data.db.ChatRole
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * 聊天记录。只存本地，不进导出文件；清空数据时一起删。
+ */
+class AiChatRepository(private val dao: AiChatDao) {
+
+    fun observe(): Flow<List<AiChatMessageEntity>> = dao.observeAll()
+
+    suspend fun addUser(content: String, tripId: Long? = null) {
+        dao.insert(AiChatMessageEntity(role = ChatRole.USER, content = content, tripId = tripId))
+    }
+
+    suspend fun addAssistant(content: String, tripId: Long? = null) {
+        dao.insert(AiChatMessageEntity(role = ChatRole.ASSISTANT, content = content, tripId = tripId))
+    }
+
+    /** 最近 N 条，按时间正序返回（给模型当历史）。 */
+    suspend fun recent(limit: Int): List<AiChatMessageEntity> =
+        dao.recent(limit).reversed()
+
+    suspend fun clear() = dao.deleteAll()
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/repo/RecordingRepository.kt -->
+
+```kotlin
+package com.llyytt.path.data.repo
+
+import androidx.room.withTransaction
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.data.db.AppDatabase
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TripEntity
+import com.llyytt.path.data.db.TripPauseEntity
+import com.llyytt.path.data.db.TripStatus
+import com.llyytt.path.location.LocationFix
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+/** 开始记录的结果。已有未结束行程时不能悄悄再开一条。 */
+sealed interface StartOutcome {
+    data class Started(val trip: TripEntity) : StartOutcome
+    data class AlreadyRunning(val trip: TripEntity) : StartOutcome
+}
+
+/**
+ * 行程的生命周期操作。
+ *
+ * 所有写操作都走 Mutex + 事务，保证「同一时刻最多一条未结束行程」。
+ * 暂停/恢复/结束都在事务里顺手收敛未闭合的 pause，保证状态不变量：
+ * - PAUSED    -> 有且仅有一条 resumedAt = null
+ * - RECORDING -> 没有 resumedAt = null
+ * - FINISHED  -> 全部闭合且 endedAt 非空
+ */
+class RecordingRepository(private val db: AppDatabase) {
+
+    private val mutex = Mutex()
+
+    suspend fun unfinished(): TripEntity? = db.tripDao().findUnfinished()
+
+    suspend fun findTrip(id: Long): TripEntity? = db.tripDao().findById(id)
+
+    suspend fun startNewTrip(): StartOutcome = mutex.withLock {
+        db.withTransaction {
+            val existing = db.tripDao().findUnfinished()
+            if (existing != null) {
+                StartOutcome.AlreadyRunning(existing)
+            } else {
+                val now = System.currentTimeMillis()
+                val id = db.tripDao().insert(TripEntity(startedAt = now))
+                StartOutcome.Started(db.tripDao().findById(id)!!)
+            }
+        }
+    }
+
+    suspend fun pause(tripId: Long) = mutex.withLock {
+        db.withTransaction {
+            val now = System.currentTimeMillis()
+            // 先收敛历史脏数据，再插新的，保证最多一条未闭合
+            db.tripPauseDao().closeAllOpen(tripId, now)
+            db.tripPauseDao().insert(TripPauseEntity(tripId = tripId, pausedAt = now))
+            db.tripDao().findById(tripId)?.let {
+                db.tripDao().update(it.copy(status = TripStatus.PAUSED, updatedAt = now))
+            }
+        }
+    }
+
+    suspend fun resume(tripId: Long) = mutex.withLock {
+        db.withTransaction {
+            val now = System.currentTimeMillis()
+            db.tripPauseDao().closeAllOpen(tripId, now)
+            db.tripDao().findById(tripId)?.let {
+                db.tripDao().update(it.copy(status = TripStatus.RECORDING, updatedAt = now))
+            }
+        }
+    }
+
+    suspend fun finish(tripId: Long) = mutex.withLock {
+        db.withTransaction {
+            val now = System.currentTimeMillis()
+            db.tripPauseDao().closeAllOpen(tripId, now)
+            db.tripDao().findById(tripId)?.let {
+                db.tripDao().update(
+                    it.copy(status = TripStatus.FINISHED, endedAt = now, updatedAt = now),
+                )
+            }
+        }
+    }
+
+    /** 记一个点。seq 由调用方保证递增（服务里是单协程串行写入）。 */
+    suspend fun insertPoint(
+        tripId: Long,
+        seq: Int,
+        fix: LocationFix,
+        startsNewSegment: Boolean,
+    ): TrackPointEntity {
+        val entity = TrackPointEntity(
+            tripId = tripId,
+            seq = seq,
+            lat = fix.point.lat,
+            lng = fix.point.lng,
+            altitudeM = fix.altitudeM,
+            speedMps = fix.speedMps,
+            bearingDeg = fix.bearingDeg,
+            accuracyM = fix.accuracyMeters,
+            recordedAt = fix.timeMillis,
+            source = fix.source,
+            startsNewSegment = startsNewSegment,
+        )
+        db.trackPointDao().insert(entity)
+        return entity
+    }
+
+    suspend fun maxSeq(tripId: Long): Int = (db.trackPointDao().maxSeq(tripId) ?: -1)
+
+    suspend fun lastPoint(tripId: Long): TrackPointEntity? = db.trackPointDao().lastPoint(tripId)
+
+    suspend fun pointCount(tripId: Long): Int = db.trackPointDao().count(tripId)
+
+    suspend fun pauses(tripId: Long): List<Pair<Long, Long?>> =
+        db.tripPauseDao().getByTrip(tripId).map { it.pausedAt to it.resumedAt }
+
+    /** 距离不缓存：每次从点重算。断点处不加线段。 */
+    suspend fun distanceMeters(tripId: Long): Double {
+        val points = db.trackPointDao().getByTrip(tripId)
+        if (points.size < 2) return 0.0
+        var sum = 0.0
+        var prev: TrackPointEntity? = null
+        for (p in points) {
+            val last = prev
+            if (last != null && !p.startsNewSegment) {
+                sum += Wgs84(last.lat, last.lng).distanceTo(Wgs84(p.lat, p.lng))
+            }
+            prev = p
+        }
+        return sum
+    }
+
+    suspend fun deleteAll() = mutex.withLock {
+        db.withTransaction {
+            db.tripDao().deleteAll()
+        }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/repo/SegmentRepository.kt -->
+
+```kotlin
+package com.llyytt.path.data.repo
+
+import androidx.room.withTransaction
+import com.llyytt.path.core.rules.SegmentDraft
+import com.llyytt.path.core.rules.Segmenter
+import com.llyytt.path.core.rules.StayDraft
+import com.llyytt.path.core.rules.TripInvariants
+import com.llyytt.path.data.db.AppDatabase
+import com.llyytt.path.data.db.StayPointEntity
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TransportMode
+import com.llyytt.path.data.db.TripSegmentEntity
+
+/**
+ * 分段的写操作。三个操作各自一个事务。
+ *
+ * 铁律：**原始 track_point 永远不修改**。分段只是「点的区间 + 方式」，
+ * 所有编辑都只动 trip_segment / stay_point。
+ */
+class SegmentRepository(private val db: AppDatabase) {
+
+    /** 跑一次自动分段并覆盖旧结果。返回段数。 */
+    suspend fun autoSegment(tripId: Long): Int = db.withTransaction {
+        val points = db.trackPointDao().getByTrip(tripId)
+        val result = Segmenter.run(points)
+
+        db.tripSegmentDao().deleteByTrip(tripId)
+        db.stayPointDao().deleteByTrip(tripId)
+
+        db.tripSegmentDao().insertAll(
+            result.segments.mapIndexed { index, draft ->
+                TripSegmentEntity(
+                    tripId = tripId,
+                    seq = index,
+                    mode = draft.mode,
+                    startPointSeq = draft.startSeq,
+                    endPointSeq = draft.endSeq,
+                )
+            },
+        )
+        db.stayPointDao().insertAll(
+            result.stays.map {
+                StayPointEntity(
+                    tripId = tripId,
+                    lat = it.lat,
+                    lng = it.lng,
+                    radiusMeters = it.radiusMeters,
+                    arriveAt = it.arriveAt,
+                    leaveAt = it.leaveAt,
+                )
+            },
+        )
+
+        validateOrThrow(tripId)
+        result.segments.size
+    }
+
+    /** 只改方式：不动 seq、不重排、不跑全局校验。 */
+    suspend fun setMode(segmentId: Long, mode: TransportMode) = db.withTransaction {
+        val segment = db.tripSegmentDao().findById(segmentId) ?: error("分段不存在")
+        db.tripSegmentDao().update(segment.copy(mode = mode, manuallyEdited = true))
+    }
+
+    /**
+     * 拆分：在 atSeq 处切开，atSeq 属于后段。
+     *
+     * 步骤（同一事务）：
+     * 1. 前段 endPointSeq = atSeq - 1
+     * 2. 后续段 seq 顺移（从后往前，避免中间态冲突）
+     * 3. 插入后段
+     * 4. 跑不变量校验；不通过就抛异常，Room 回滚整个事务
+     */
+    suspend fun split(segmentId: Long, atSeq: Int) = db.withTransaction {
+        val target = db.tripSegmentDao().findById(segmentId) ?: error("分段不存在")
+        require(atSeq in (target.startPointSeq + 1)..target.endPointSeq) {
+            "拆分点必须落在段内部（$atSeq 不在 ${target.startPointSeq + 1}..${target.endPointSeq}）"
+        }
+        val tripId = target.tripId
+        val all = db.tripSegmentDao().getByTrip(tripId).sortedBy { it.seq }
+
+        db.tripSegmentDao().update(target.copy(endPointSeq = atSeq - 1, manuallyEdited = true))
+
+        all.filter { it.seq > target.seq }
+            .sortedByDescending { it.seq }
+            .forEach { db.tripSegmentDao().update(it.copy(seq = it.seq + 1)) }
+
+        db.tripSegmentDao().insert(
+            TripSegmentEntity(
+                tripId = tripId,
+                seq = target.seq + 1,
+                mode = target.mode,
+                startPointSeq = atSeq,
+                endPointSeq = target.endPointSeq,
+                manuallyEdited = true,
+            ),
+        )
+
+        validateOrThrow(tripId)
+    }
+
+    /**
+     * 合并相邻两段：保留前段、删掉后段、后续 seq 前移。
+     */
+    suspend fun merge(firstId: Long, secondId: Long) = db.withTransaction {
+        val first = db.tripSegmentDao().findById(firstId) ?: error("分段不存在")
+        val second = db.tripSegmentDao().findById(secondId) ?: error("分段不存在")
+        require(first.tripId == second.tripId) { "不能跨行程合并" }
+        require(first.endPointSeq + 1 == second.startPointSeq) { "只能合并相邻的两段" }
+
+        val tripId = first.tripId
+        db.tripSegmentDao().update(first.copy(endPointSeq = second.endPointSeq, manuallyEdited = true))
+        db.tripSegmentDao().deleteById(second.id)
+
+        db.tripSegmentDao().getByTrip(tripId)
+            .filter { it.seq > second.seq }
+            .sortedBy { it.seq }
+            .forEach { db.tripSegmentDao().update(it.copy(seq = it.seq - 1)) }
+
+        validateOrThrow(tripId)
+    }
+
+    /**
+     * 校验失败就抛，让事务回滚。绝不静默吞掉。
+     */
+    private suspend fun validateOrThrow(tripId: Long) {
+        val points = db.trackPointDao().getByTrip(tripId)
+        val segments = db.tripSegmentDao().getByTrip(tripId).map {
+            SegmentDraft(it.startPointSeq, it.endPointSeq, it.mode)
+        }
+        val stays = db.stayPointDao().getByTrip(tripId)
+        val violations = TripInvariants.validateSegments(points, segments, toDrafts(stays, points))
+        if (violations.isNotEmpty()) {
+            throw IllegalStateException(
+                "分段校验失败：" + violations.joinToString { "${it.code}(${it.message})" },
+            )
+        }
+    }
+
+    /**
+     * stay_point 表里没有存 seq 区间（只存了中心点、半径、到达/离开时间）。
+     * 校验时用时间戳把它映射回点的下标 —— 因为 arriveAt/leaveAt 本来就取自点的 recordedAt，
+     * 能精确对上。这样避免了为校验再加两个字段和一次 schema 迁移。
+     */
+    private fun toDrafts(stays: List<StayPointEntity>, points: List<TrackPointEntity>): List<StayDraft> =
+        stays.mapNotNull { stay ->
+            val start = points.indexOfFirst { it.recordedAt >= stay.arriveAt }
+            val end = points.indexOfLast { it.recordedAt <= (stay.leaveAt ?: Long.MAX_VALUE) }
+            if (start < 0 || end < start) {
+                null
+            } else {
+                StayDraft(
+                    startSeq = points[start].seq,
+                    endSeq = points[end].seq,
+                    lat = stay.lat,
+                    lng = stay.lng,
+                    radiusMeters = stay.radiusMeters,
+                    arriveAt = stay.arriveAt,
+                    leaveAt = stay.leaveAt ?: stay.arriveAt,
+                )
+            }
+        }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/repo/TripRepository.kt -->
+
+```kotlin
+package com.llyytt.path.data.repo
+
+import androidx.room.withTransaction
+import com.llyytt.path.core.rules.TripStats
+import com.llyytt.path.core.rules.TripStatsCalculator
+import com.llyytt.path.data.db.AppDatabase
+import com.llyytt.path.data.db.StayPointEntity
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TripEntity
+import com.llyytt.path.data.db.TripSegmentEntity
+
+data class TripListItem(
+    val trip: TripEntity,
+    val stats: TripStats,
+    val segmentCount: Int = 0,
+    val stayCount: Int = 0,
+)
+
+data class TripDetail(
+    val trip: TripEntity,
+    val points: List<TrackPointEntity>,
+    val segments: List<TripSegmentEntity>,
+    val stays: List<StayPointEntity>,
+    val stats: TripStats,
+)
+
+/**
+ * 只读查询。写入仍然走 RecordingRepository，职责分开。
+ */
+class TripRepository(private val db: AppDatabase) {
+
+    suspend fun list(limit: Int = 100): List<TripListItem> {
+        val trips = db.tripDao().listOnce(limit)
+        val now = System.currentTimeMillis()
+        return trips.map { trip ->
+            val points = db.trackPointDao().getByTrip(trip.id)
+            val pauses = db.tripPauseDao().getByTrip(trip.id).map { it.pausedAt to it.resumedAt }
+            TripListItem(
+                trip = trip,
+                stats = TripStatsCalculator.compute(trip, points, pauses, now),
+                segmentCount = db.tripSegmentDao().countByTrip(trip.id),
+                stayCount = db.stayPointDao().countByTrip(trip.id),
+            )
+        }
+    }
+
+    suspend fun detail(tripId: Long): TripDetail? {
+        val trip = db.tripDao().findById(tripId) ?: return null
+        val points = db.trackPointDao().getByTrip(tripId)
+        val segments = db.tripSegmentDao().getByTrip(tripId)
+        val stays = db.stayPointDao().getByTrip(tripId)
+        val pauses = db.tripPauseDao().getByTrip(tripId).map { it.pausedAt to it.resumedAt }
+        val stats = TripStatsCalculator.compute(trip, points, pauses, System.currentTimeMillis())
+        return TripDetail(trip, points, segments, stays, stats)
+    }
+
+    /**
+     * 删一条行程。
+     *
+     * 子表都是 CASCADE，删 trip 一行就够；这里额外把挂在这条行程上的 AI 消息
+     * 也清掉（虽然目前不会写入 tripId，但删行程时留着无主引用没意义）。
+     */
+    suspend fun delete(tripId: Long) = db.withTransaction {
+        db.aiChatDao().deleteByTrip(tripId)
+        db.tripDao().deleteById(tripId)
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/data/settings/SettingsStore.kt -->
+
+```kotlin
+package com.llyytt.path.data.settings
+
+import android.content.Context
+
+/**
+ * 轻量设置存储。
+ *
+ * 用什么存：SharedPreferences。本步只需要「隐私是否已同意」一个布尔，
+ * 没必要为它引入 DataStore 一整套协程管线。
+ * 注意：AI Key **不在这里**，它走 Android Keystore 加密（第 7 步）。
+ */
+class SettingsStore(context: Context) {
+
+    private val prefs = context.getSharedPreferences("xingji_settings", Context.MODE_PRIVATE)
+
+    /** 隐私说明页是否已被用户明确同意。默认 false —— 没同意就不许创建地图。 */
+    var privacyAccepted: Boolean
+        get() = prefs.getBoolean(KEY_PRIVACY_ACCEPTED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_PRIVACY_ACCEPTED, value).apply()
+        }
+
+    /** 首次定位耗时实测结果，第 3 步第二批会写入，方便以后回归对比。 */
+    var firstFixMillis: Long
+        get() = prefs.getLong(KEY_FIRST_FIX_MS, -1L)
+        set(value) {
+            prefs.edit().putLong(KEY_FIRST_FIX_MS, value).apply()
+        }
+
+    /**
+     * 是否显示瞬时速度。
+     *
+     * 默认关闭：室外精度还没验证过（见 step9-test-checklist）。
+     * 打开后记录页显示实时速度、详情页回放显示该时刻速度，
+     * 用的都是 SpeedDisplay.kt 里那套平滑逻辑。
+     */
+    var showInstantSpeed: Boolean
+        get() = prefs.getBoolean(KEY_SHOW_INSTANT_SPEED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_SHOW_INSTANT_SPEED, value).apply()
+        }
+
+    private companion object {
+        const val KEY_PRIVACY_ACCEPTED = "privacy_accepted"
+        const val KEY_FIRST_FIX_MS = "first_fix_millis"
+        const val KEY_SHOW_INSTANT_SPEED = "show_instant_speed"
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/map/MapEngine.kt -->
+
+```kotlin
+package com.llyytt.path.map
+
+import android.graphics.Bitmap
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.geo.Wgs84Bounds
+
+/**
+ * 离线能力分级。
+ *
+ * MVP 走高德 11.x：offlineCapability = CACHE_ONLY，
+ * 意思是只能吃 SDK 自己对底图的缓存，弱网/短暂离线时可能看到部分已缓存区域，
+ * 不保证完整，也不提供城市列表/下载/删除任何 UI。
+ */
+enum class OfflineCapability {
+    /** 完全没有离线能力，断网即白图。 */
+    NONE,
+
+    /** 只有 SDK 原生底图缓存，可用性有限且不可控。 */
+    CACHE_ONLY,
+
+    /** 支持按城市下载完整离线包（本 App MVP 不提供）。 */
+    FULL,
+}
+
+data class MapPolyline(
+    val id: String,
+    val points: List<Wgs84>,
+    val colorArgb: Int,
+    val widthDp: Float = 6f,
+)
+
+data class MapMarker(
+    val id: String,
+    val position: Wgs84,
+    val label: String? = null,
+)
+
+/** 一次渲染的全部内容。声明式：给什么画什么，不做增量更新。 */
+data class MapScene(
+    val polylines: List<MapPolyline> = emptyList(),
+    val markers: List<MapMarker> = emptyList(),
+)
+
+interface MapController {
+    /** 渲染一个场景（轨迹 + 标记，全量重画）。地图还没就绪时自动排队。 */
+    fun render(scene: MapScene)
+
+    /** 只重画轨迹，不动光标。回放时用这个，避免每帧重建整张图。 */
+    fun renderTrack(polylines: List<MapPolyline>)
+
+    /** 只移动回放光标。传 null 表示隐藏。 */
+    fun renderCursor(point: Wgs84?)
+
+    fun moveCameraTo(point: Wgs84, zoom: Float? = null)
+
+    fun fitBounds(bounds: Wgs84Bounds, paddingDp: Int = 64)
+
+    /** 地图截图，第 8 步用来生成分享图。地图未就绪时返回 null。 */
+    suspend fun snapshot(): Bitmap?
+
+    /** 点中某条折线时回调，参数是 MapPolyline.id。 */
+    fun setOnPolylineClickListener(listener: (String) -> Unit)
+}
+
+/**
+ * 地图引擎。业务层只依赖这个接口，永远不 import com.amap / com.baidu。
+ *
+ * 接口里只有「跨引擎共性」：画线、画点、相机、截图、生命周期、点击回调。
+ * 引擎特有的东西（离线管理 UI、定位初始化、隐私合规、Key 配置）不在这里。
+ */
+interface MapEngine {
+    val id: String
+
+    val offlineCapability: OfflineCapability
+
+    fun createController(): MapController
+
+    @Composable
+    fun MapView(controller: MapController, modifier: Modifier)
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/service/RecordingService.kt -->
+
+```kotlin
+package com.llyytt.path.service
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.IBinder
+import android.os.SystemClock
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import com.llyytt.path.MainActivity
+import com.llyytt.path.XjApp
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.rules.DurationCalc
+import com.llyytt.path.core.rules.SpeedSampler
+import com.llyytt.path.core.rules.SpeedSmoother
+import com.llyytt.path.core.rules.Tuning
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TripEntity
+import com.llyytt.path.data.db.TripStatus
+import com.llyytt.path.data.repo.RecordingRepository
+import com.llyytt.path.data.settings.SettingsStore
+import com.llyytt.path.location.LocationError
+import com.llyytt.path.location.LocationFix
+import com.llyytt.path.location.LocationSource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+
+/**
+ * 记录前台服务。
+ *
+ * 为什么必须是前台服务：只有带 location 类型的前台服务，才能在锁屏 / 切后台后
+ * 继续拿定位、继续写库。普通后台服务在 Android 8+ 会被直接掐断。
+ *
+ * 单协程串行写：定位回调可能密集到达，用一个 Channel + 单个消费者保证
+ * seq 严格递增、lastPoint/distance 不被并发改坏。
+ */
+class RecordingService : Service() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private lateinit var repo: RecordingRepository
+    private lateinit var settings: SettingsStore
+
+    private var location: LocationSource? = null
+
+    @Volatile
+    private var trip: TripEntity? = null
+
+    private var tripId: Long = 0L
+    private var nextSeq = 0
+    private var lastPoint: TrackPointEntity? = null
+    private var distance = 0.0
+    private var pointCount = 0
+    private var pauses: List<Pair<Long, Long?>> = emptyList()
+
+    private var pendingNewSegment = true
+    private var firstFixStored = false
+    private var startRequestedElapsed = 0L
+    private var lastError: LocationError? = null
+    private var lastNotifText: String? = null
+    private var ticker: Job? = null
+
+    /** 显示用速度：平滑后的中位数 + 静止判定 */
+    private val speedSmoother = SpeedSmoother()
+    private var currentSpeedMps: Double? = null
+    private var isStationary = false
+
+    private val fixes = Channel<LocationFix>(Channel.UNLIMITED)
+
+    override fun onCreate() {
+        super.onCreate()
+        val app = application as XjApp
+        repo = app.recordingRepository
+        settings = app.settings
+        location = app.locationSource()
+        createChannel()
+        Log.i(TAG, "service created pid=${android.os.Process.myPid()}")
+
+        // 看门狗：如果 5 秒内没有 adopt 成功，说明启动路径卡住了，
+        // 打一条明显的 ERROR，而不是静默地什么都不做。
+        // （第 2 批排查过一次「服务已启动但 19 分钟零日志」，就是靠这类痕迹定位）
+        scope.launch {
+            delay(WATCHDOG_MS)
+            if (trip == null) {
+                Log.e(TAG, "WATCHDOG: ${WATCHDOG_MS}ms 内没有 adopt，启动路径可能卡住")
+            }
+        }
+
+        // 串行消费者：所有入库都在这一个协程里发生
+        scope.launch {
+            for (fix in fixes) {
+                runCatching { processFix(fix) }
+                    .onFailure { Log.e(TAG, "processFix failed", it) }
+            }
+        }
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val action = intent?.action
+        val id = intent?.getLongExtra(EXTRA_TRIP_ID, 0L) ?: 0L
+        Log.i(TAG, "onStartCommand action=$action tripId=$id startId=$startId")
+
+        try {
+            when (action) {
+            ACTION_START -> {
+                // 必须在 5 秒内进入前台，先挂个「准备中」的通知
+                beginForeground("正在开启定位…")
+                tripId = id
+                startRequestedElapsed = SystemClock.elapsedRealtime()
+                firstFixStored = false
+                scope.launch { loadAndStart(id) }
+            }
+
+            ACTION_RESUME -> {
+                beginForeground("正在恢复定位…")
+                if (id != 0L) tripId = id
+                startRequestedElapsed = SystemClock.elapsedRealtime()
+                scope.launch { doResume() }
+            }
+
+            ACTION_PAUSE -> scope.launch { doPause() }
+
+            ACTION_STOP -> scope.launch { doStop() }
+
+            // START_STICKY 被系统重启时 intent 为 null —— 这是断点恢复入口
+            null -> {
+                beginForeground("正在恢复记录…")
+                startRequestedElapsed = SystemClock.elapsedRealtime()
+                scope.launch { recover() }
+            }
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "onStartCommand 失败 action=$action", t)
+        }
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        ticker?.cancel()
+        location?.stop()
+        fixes.close()
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    // ---------- 生命周期 ----------
+
+    private suspend fun loadAndStart(id: Long) {
+        try {
+            val t = repo.findTrip(id)
+            if (t == null) {
+                Log.e(TAG, "trip $id not found, stopping")
+                stopSelfSafely()
+                return
+            }
+            adopt(t)
+            pendingNewSegment = true
+            startLocationIfRecording()
+            startTicker()
+            publish()
+        } catch (th: Throwable) {
+            Log.e(TAG, "loadAndStart 失败 tripId=$id", th)
+            stopSelfSafely()
+        }
+    }
+
+    /** 进程被杀后重建：从数据库把「未结束行程」接上 */
+    private suspend fun recover() {
+        val t = repo.unfinished()
+        if (t == null) {
+            Log.i(TAG, "recover: no unfinished trip, stop")
+            stopSelfSafely()
+            return
+        }
+        adopt(t)
+        // 恢复出来的第一个点也视为新段起点，避免把中断两端连成直线
+        pendingNewSegment = true
+        if (t.status == TripStatus.RECORDING) {
+            startLocationIfRecording()
+        }
+        startTicker()
+        publish()
+    }
+
+    private suspend fun adopt(t: TripEntity) {
+        trip = t
+        tripId = t.id
+        nextSeq = repo.maxSeq(t.id) + 1
+        lastPoint = repo.lastPoint(t.id)
+        distance = repo.distanceMeters(t.id)
+        pointCount = repo.pointCount(t.id)
+        pauses = repo.pauses(t.id)
+        resetSpeed()
+        Log.i(TAG, "adopt trip=${t.id} status=${t.status} seq=$nextSeq points=$pointCount dist=$distance")
+    }
+
+    private suspend fun doPause() {
+        val id = ensureTripId() ?: return
+        location?.stop()
+        resetSpeed()
+        repo.pause(id)
+        reloadDerived()
+        publish()
+    }
+
+    private suspend fun doResume() {
+        val id = ensureTripId() ?: return
+        repo.resume(id)
+        reloadDerived()
+        pendingNewSegment = true
+        firstFixStored = false
+        resetSpeed()
+        startLocationIfRecording()
+        startTicker()
+        publish()
+    }
+
+    private suspend fun doStop() {
+        val id = ensureTripId()
+        location?.stop()
+        resetSpeed()
+        if (id != null) repo.finish(id)
+        reloadDerived()
+        publish()
+        stopTicker()
+        stopSelfSafely()
+    }
+
+    private fun resetSpeed() {
+        speedSmoother.reset()
+        currentSpeedMps = null
+        isStationary = false
+    }
+
+    private suspend fun ensureTripId(): Long? {
+        if (tripId == 0L) {
+            val pending = repo.unfinished() ?: return null
+            adopt(pending)
+        }
+        return tripId.takeIf { it != 0L }
+    }
+
+    private suspend fun reloadDerived() {
+        val id = tripId
+        if (id == 0L) return
+        trip = repo.findTrip(id)
+        pauses = repo.pauses(id)
+        pointCount = repo.pointCount(id)
+        distance = repo.distanceMeters(id)
+        lastPoint = repo.lastPoint(id)
+    }
+
+    // ---------- 定位 ----------
+
+    private fun startLocationIfRecording() {
+        val t = trip ?: return
+        if (t.status != TripStatus.RECORDING) return
+        location?.start(
+            onFix = { fix -> fixes.trySend(fix) },
+            onError = { error ->
+                lastError = error
+                Log.w(TAG, "location error: $error")
+                publish()
+            },
+        )
+    }
+
+    private suspend fun processFix(fix: LocationFix) {
+        val t = trip ?: return
+        if (t.status != TripStatus.RECORDING) return
+
+        // 精度太差的点直接丢，不入库（不改善，只是不污染）
+        if (fix.accuracyMeters > Tuning.Filter.MAX_ACCURACY_M) return
+        val speed = fix.speedMps
+        if (speed != null && speed > Tuning.Filter.MAX_SPEED_MPS) return
+
+        // 丢掉缓存点：getLastKnownLocation 可能给几小时前的位置，
+        // 存进去会凭空造出一段跨城的假距离。
+        val age = System.currentTimeMillis() - fix.timeMillis
+        if (age > STALE_FIX_MS) {
+            Log.d(TAG, "skip stale fix, age=${age}ms")
+            return
+        }
+
+        val startsNew = pendingNewSegment
+        val prev = lastPoint
+
+        // 速度样本要在插入新点之前算：用的还是「上一个点 → 当前点」
+        val speedSample = SpeedSampler.sample(
+            previousPoint = prev?.let { Wgs84(it.lat, it.lng) },
+            previousTimeMillis = prev?.recordedAt,
+            currentPoint = fix.point,
+            currentTimeMillis = fix.timeMillis,
+            systemSpeedMps = if (startsNew) null else fix.speedMps,
+            accuracyMeters = fix.accuracyMeters,
+        )
+
+        val add = if (!startsNew && prev != null) {
+            Wgs84(prev.lat, prev.lng).distanceTo(fix.point)
+        } else {
+            0.0
+        }
+
+        val seq = nextSeq
+        val entity = repo.insertPoint(t.id, seq, fix, startsNew)
+        nextSeq = seq + 1
+        lastPoint = entity
+        pointCount += 1
+        distance += add
+        pendingNewSegment = false
+        lastError = null
+
+        // 平滑后的速度只用于显示；着色仍然用原始 speedMps
+        if (startsNew) speedSmoother.reset()
+        if (speedSample != null) {
+            val snap = speedSmoother.add(speedSample, fix.timeMillis)
+            currentSpeedMps = snap.smoothedMps
+            isStationary = snap.stationary
+        }
+
+        Log.i(TAG, "POINT_STORED seq=$seq age=${age}ms acc=${fix.accuracyMeters}")
+
+        if (!firstFixStored) {
+            firstFixStored = true
+            val elapsed = SystemClock.elapsedRealtime() - startRequestedElapsed
+            settings.firstFixMillis = elapsed
+            Log.i(TAG, "FIRST_FIX_STORED: ${elapsed}ms since start request")
+        }
+        publish()
+    }
+
+    // ---------- 状态发布 ----------
+
+    private fun startTicker() {
+        ticker?.cancel()
+        ticker = scope.launch {
+            var tick = 0L
+            while (isActive) {
+                publish()
+                // 每 10 秒打一条心跳：用来判断进程在后台是否被冻结
+                if (tick % 10L == 0L) {
+                    Log.i(TAG, "heartbeat points=$pointCount dist=${distance.toInt()} status=${trip?.status}")
+                }
+                tick++
+                delay(Tuning.Recording.TICK_MS)
+            }
+        }
+    }
+
+    private fun stopTicker() {
+        ticker?.cancel()
+        ticker = null
+    }
+
+    @Synchronized
+    private fun publish() {
+        val t = trip ?: return
+        val now = System.currentTimeMillis()
+        val active = DurationCalc.activeMillis(
+            startedAt = t.startedAt,
+            endedAt = t.endedAt,
+            status = t.status,
+            pauses = pauses,
+            now = now,
+        )
+        RecordingStateHolder.set(
+            RecordingUiState(
+                tripId = t.id,
+                status = t.status,
+                startedAt = t.startedAt,
+                distanceMeters = distance,
+                activeMillis = active,
+                pointCount = pointCount,
+                lastAccuracyM = lastPoint?.accuracyM,
+                lastError = lastError,
+                hasFirstFix = firstFixStored,
+                speedMps = currentSpeedMps,
+                isStationary = isStationary,
+            ),
+        )
+        updateNotification(t, active)
+    }
+
+    // ---------- 通知 ----------
+
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (nm.getNotificationChannel(CHANNEL_ID) != null) return
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "轨迹记录",
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            description = "记录进行中时显示状态"
+            setShowBadge(false)
+        }
+        nm.createNotificationChannel(channel)
+    }
+
+    private fun beginForeground(text: String) {
+        val notif = buildNotification(text)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+        } else {
+            startForeground(NOTIF_ID, notif)
+        }
+    }
+
+    private fun buildNotification(text: String): Notification {
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("行迹 · 正在记录")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(contentIntent)
+            .build()
+    }
+
+    private fun updateNotification(t: TripEntity, activeMillis: Long) {
+        val km = distance / 1000.0
+        val minutes = activeMillis / 60000
+        val seconds = (activeMillis / 1000) % 60
+        val text = when (t.status) {
+            TripStatus.RECORDING -> "%.2f km · %d分%02d秒 · %d 点".format(km, minutes, seconds, pointCount)
+            TripStatus.PAUSED -> "已暂停 · %.2f km · %d分%02d秒".format(km, minutes, seconds)
+            TripStatus.FINISHED -> "已结束"
+        }
+        // 文本没变就不重复 notify。每秒发一次会触发系统 AlarmScheduler 刷屏
+        if (text == lastNotifText) return
+        lastNotifText = text
+        runCatching {
+            NotificationManagerCompat.from(this).notify(NOTIF_ID, buildNotification(text))
+        }
+    }
+
+    private fun stopSelfSafely() {
+        stopTicker()
+        location?.stop()
+        RecordingStateHolder.reset()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        stopSelf()
+    }
+
+    companion object {
+        private const val TAG = "XjRec"
+
+        const val ACTION_START = "com.llyytt.path.action.START"
+        const val ACTION_PAUSE = "com.llyytt.path.action.PAUSE"
+        const val ACTION_RESUME = "com.llyytt.path.action.RESUME"
+        const val ACTION_STOP = "com.llyytt.path.action.STOP"
+
+        const val EXTRA_TRIP_ID = "trip_id"
+
+        private const val CHANNEL_ID = "recording"
+        private const val NOTIF_ID = 1001
+
+        /** 超过这个「年龄」的点视为缓存点，不入库 */
+        private const val STALE_FIX_MS = 10_000L
+
+        /** 看门狗：5 秒内没 adopt 就报错 */
+        private const val WATCHDOG_MS = 5_000L
+
+        fun intent(context: Context, action: String, tripId: Long = 0L): Intent =
+            Intent(context, RecordingService::class.java).apply {
+                this.action = action
+                putExtra(EXTRA_TRIP_ID, tripId)
+            }
+
+        fun start(context: Context, tripId: Long) {
+            ContextCompat.startForegroundService(
+                context,
+                intent(context, ACTION_START, tripId),
+            )
+        }
+
+        fun resume(context: Context, tripId: Long) {
+            ContextCompat.startForegroundService(
+                context,
+                intent(context, ACTION_RESUME, tripId),
+            )
+        }
+
+        fun pause(context: Context) {
+            ContextCompat.startForegroundService(context, intent(context, ACTION_PAUSE))
+        }
+
+        fun stop(context: Context) {
+            ContextCompat.startForegroundService(context, intent(context, ACTION_STOP))
+        }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/service/RecordingStateHolder.kt -->
+
+```kotlin
+package com.llyytt.path.service
+
+import com.llyytt.path.data.db.TripStatus
+import com.llyytt.path.location.LocationError
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * 记录页的实时状态。服务写，UI 读。
+ *
+ * 只放「显示用」的派生数据；真值永远在数据库里。
+ * 服务被杀后重启时，这些值会从数据库重新算出来，不会丢。
+ */
+data class RecordingUiState(
+    val tripId: Long = 0L,
+    val status: TripStatus? = null,
+    val startedAt: Long = 0L,
+    val distanceMeters: Double = 0.0,
+    val activeMillis: Long = 0L,
+    val pointCount: Int = 0,
+    val lastAccuracyM: Float? = null,
+    val lastError: LocationError? = null,
+    /** 冷启动首次定位是否已拿到（用于 UI 提示「正在搜星」） */
+    val hasFirstFix: Boolean = false,
+    /** 平滑后的瞬时速度（m/s）。null 表示还没有足够样本。 */
+    val speedMps: Double? = null,
+    /** 速度持续低于阈值超过 5 秒 */
+    val isStationary: Boolean = false,
+) {
+    val isActive: Boolean
+        get() = status == TripStatus.RECORDING || status == TripStatus.PAUSED
+}
+
+object RecordingStateHolder {
+
+    private val _state = MutableStateFlow(RecordingUiState())
+
+    val state: StateFlow<RecordingUiState> = _state
+
+    fun set(value: RecordingUiState) {
+        _state.value = value
+    }
+
+    fun reset() {
+        _state.value = RecordingUiState()
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/ai/AiChatScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.ai
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.llyytt.path.XjApp
+import com.llyytt.path.data.ai.AiResult
+import com.llyytt.path.data.ai.ChatTurn
+import com.llyytt.path.data.ai.TripContextBuilder
+import com.llyytt.path.data.db.AiChatMessageEntity
+import com.llyytt.path.data.db.ChatRole
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+
+/**
+ * AI 聊天。
+ *
+ * 没配 Key 时只显示引导，不发任何请求。
+ * 首次发送前会弹一次隐私提示（数据会发到用户自己填的服务商）。
+ * 发的内容是摘要，不是全量轨迹点。
+ */
+@Composable
+fun AiChatScreen(onBack: () -> Unit, onOpenSettings: () -> Unit) {
+    val context = LocalContext.current
+    val app = context.applicationContext as XjApp
+    val scope = rememberCoroutineScope()
+
+    val config by app.aiSettings.config.collectAsState(initial = null)
+    var messages by remember { mutableStateOf<List<AiChatMessageEntity>>(emptyList()) }
+    var input by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var showDisclosure by remember { mutableStateOf(false) }
+    var pendingText by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        app.aiChatRepository.observe().collect { messages = it }
+    }
+
+    fun reallySend(text: String) {
+        val cfg = config ?: return
+        if (text.isBlank() || sending) return
+        scope.launch {
+            sending = true
+            error = null
+            try {
+                app.aiChatRepository.addUser(text)
+
+                val trips = app.tripRepository.list(10)
+                val latest = trips.firstOrNull()?.let { app.tripRepository.detail(it.trip.id) }
+                val tripContext = buildString {
+                    appendLine(TripContextBuilder.summarizeTrips(trips))
+                    if (latest != null) appendLine(TripContextBuilder.summarizeDetail(latest))
+                }
+
+                val turns = buildList {
+                    add(ChatTurn("system", TripContextBuilder.systemPrompt() + "\n\n" + tripContext))
+                    app.aiChatRepository.recent(12).forEach {
+                        add(
+                            ChatTurn(
+                                role = if (it.role == ChatRole.USER) "user" else "assistant",
+                                content = it.content,
+                            ),
+                        )
+                    }
+                }
+
+                when (val result = app.aiClient.chat(cfg, turns)) {
+                    is AiResult.Success -> app.aiChatRepository.addAssistant(result.text)
+                    is AiResult.Failure -> error = result.message
+                }
+            } catch (t: Throwable) {
+                error = t.message ?: "发送失败"
+            } finally {
+                sending = false
+            }
+        }
+    }
+
+    fun onSendClick() {
+        val text = input.trim()
+        if (text.isEmpty() || sending) return
+        val cfg = config ?: return
+        if (!cfg.disclosureAccepted) {
+            pendingText = text
+            showDisclosure = true
+            return
+        }
+        input = ""
+        reallySend(text)
+    }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("返回") }
+                Text(
+                    text = "AI 助手",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                if (messages.isNotEmpty()) {
+                    TextButton(onClick = {
+                        scope.launch { app.aiChatRepository.clear() }
+                    }) { Text("清空") }
+                }
+                TextButton(onClick = onOpenSettings) { Text("设置") }
+            }
+
+            val cfg = config
+            when {
+                cfg == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+
+                !cfg.isReady -> GuideContent(onOpenSettings)
+
+                else -> {
+                    val listState = rememberLazyListState()
+                    LaunchedEffect(messages.size) {
+                        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
+                    }
+
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        if (messages.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "问点什么吧，比如「我最近走了多少公里」「哪次骑车最久」。\n" +
+                                        "只会把行程摘要发给 ${cfg.baseUrl}，不会发原始轨迹点。",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        items(messages, key = { it.id }) { message ->
+                            MessageBubble(message)
+                        }
+                    }
+
+                    error?.let {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { error = null }) { Text("知道了") }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedTextField(
+                            value = input,
+                            onValueChange = { input = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("问点关于行程的问题") },
+                            maxLines = 4,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = { onSendClick() },
+                            enabled = input.isNotBlank() && !sending,
+                        ) {
+                            Text(if (sending) "…" else "发送")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showDisclosure) {
+        AlertDialog(
+            onDismissRequest = { showDisclosure = false; pendingText = null },
+            title = { Text("发出去之前说一声") },
+            text = {
+                Text(
+                    "你的行程摘要（距离、时长、分段等，不含原始轨迹点）会发送到" +
+                        "你自己配置的 API 服务商。App 不做任何中转，也不保存这次请求。",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        app.aiSettings.acceptDisclosure()
+                        showDisclosure = false
+                        val text = pendingText
+                        pendingText = null
+                        if (text != null) {
+                            input = ""
+                            reallySend(text)
+                        }
+                    }
+                }) { Text("同意并发送") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDisclosure = false; pendingText = null }) { Text("取消") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun GuideContent(onOpenSettings: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("还没有配置 AI 服务", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "AI 聊天需要你自己的 API：填一个 OpenAI 兼容的 BaseURL、模型名和 Key。" +
+                    "App 不内置、不代理任何模型服务，费用在你的账号上。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onOpenSettings) { Text("去设置") }
+        }
+    }
+}
+
+@Composable
+private fun MessageBubble(message: AiChatMessageEntity) {
+    val isUser = message.role == ChatRole.USER
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
+    ) {
+        Card(
+            modifier = Modifier.widthIn(max = 300.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isUser) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+            ),
+        ) {
+            Text(
+                text = message.content,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(12.dp),
+            )
+        }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/mapdemo/MapDemoScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.mapdemo
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.llyytt.path.XjApp
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.geo.Wgs84Bounds
+import com.llyytt.path.map.MapPolyline
+import com.llyytt.path.map.MapScene
+import com.llyytt.path.map.OfflineCapability
+import kotlinx.coroutines.launch
+
+/** 天安门附近的一圈假轨迹，只用来验证“能画线”。第 3 步会换成真实记录。 */
+private val DEMO_TRACK = listOf(
+    Wgs84(39.90870, 116.39750),
+    Wgs84(39.90960, 116.39910),
+    Wgs84(39.91040, 116.39690),
+    Wgs84(39.90910, 116.39560),
+    Wgs84(39.90870, 116.39750),
+)
+
+@Composable
+fun MapDemoScreen() {
+    val context = LocalContext.current
+    val app = context.applicationContext as XjApp
+    val engine = app.mapEngine()
+    val controller = remember { engine.createController() }
+    val scope = rememberCoroutineScope()
+
+    var status by remember { mutableStateOf("地图加载中…") }
+
+    fun locateNow() {
+        val granted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            status = "需要定位权限才能「定位到我」"
+            return
+        }
+        val me = readLastKnownWgs84(context)
+        if (me == null) {
+            status = "系统还没有定位缓存：先打开任意地图 App 定位一次，再回来点"
+            return
+        }
+        controller.moveCameraTo(me, 16f)
+        status = "已定位：%.5f, %.5f".format(me.lat, me.lng)
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) locateNow()
+        else status = "定位权限被拒绝：只影响「定位到我」，不影响地图显示"
+    }
+
+    LaunchedEffect(controller) {
+        controller.setOnPolylineClickListener { id ->
+            Toast.makeText(context, "点到折线：$id", Toast.LENGTH_SHORT).show()
+        }
+        controller.render(
+            MapScene(
+                polylines = listOf(
+                    MapPolyline(
+                        id = "demo",
+                        points = DEMO_TRACK,
+                        colorArgb = 0xFF2F6B57.toInt(),
+                    )
+                )
+            )
+        )
+        Wgs84Bounds.of(DEMO_TRACK)?.let { controller.fitBounds(it, paddingDp = 96) }
+        status = "地图就绪。绿色线是天安门附近的测试轨迹"
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        engine.MapView(controller = controller, modifier = Modifier.fillMaxSize())
+
+        Card(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(16.dp)
+                .fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "离线能力：" + when (engine.offlineCapability) {
+                        OfflineCapability.NONE -> "无"
+                        OfflineCapability.CACHE_ONLY -> "仅 SDK 底图缓存（弱网可看部分区域，不保证完整）"
+                        OfflineCapability.FULL -> "完整离线包"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = status, style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = {
+                        val granted = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (granted) locateNow()
+                        else permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }) {
+                        Text("定位到我")
+                    }
+                    OutlinedButton(onClick = {
+                        Wgs84Bounds.of(DEMO_TRACK)?.let { controller.fitBounds(it, paddingDp = 96) }
+                    }) {
+                        Text("复位")
+                    }
+                    OutlinedButton(onClick = {
+                        scope.launch {
+                            val bmp = controller.snapshot()
+                            status = if (bmp != null) {
+                                "截图成功：${bmp.width} × ${bmp.height}（第 8 步会存相册）"
+                            } else {
+                                "截图失败：地图还没渲染完"
+                            }
+                        }
+                    }) {
+                        Text("截图")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 取最近一次已知位置。只用于第 2 步的“地图先动起来”，
+ * 第 3 步会换成正式的 LocationSource（持续、可配置采样）。
+ */
+private fun readLastKnownWgs84(context: Context): Wgs84? {
+    val fine = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    val coarse = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    if (!fine && !coarse) return null
+
+    val manager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
+    val candidates = listOf(
+        LocationManager.GPS_PROVIDER,
+        LocationManager.NETWORK_PROVIDER,
+    ).mapNotNull { provider ->
+        runCatching { manager.getLastKnownLocation(provider) }.getOrNull()
+    }
+    val best = candidates.maxByOrNull { it.time } ?: return null
+    return Wgs84(best.latitude, best.longitude)
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/offline/OfflineInfoScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.offline
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+/**
+ * 离线地图说明页。
+ *
+ * 这是一个「如实告知」页，不是功能页：
+ * 本 App 不提供离线包下载，只有高德 SDK 自带的底图缓存。
+ * 文案刻意写得保守——不承诺"离线可用"，只说"可能看到部分已缓存区域"。
+ */
+@Composable
+fun OfflineInfoScreen(onBack: () -> Unit) {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("返回") }
+                Text(text = "离线地图", style = MaterialTheme.typography.titleLarge)
+            }
+            HorizontalDivider()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+            ) {
+                Text(
+                    text = "本 App 不提供离线地图包下载。",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "高德地图 SDK 会在你浏览地图时缓存底图。因此：",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(8.dp))
+                Bullet("弱网或短暂断网时，能看到部分已缓存的区域")
+                Bullet("不保证完整，也不保证是最新的")
+                Bullet("长时间没有网络，地图可能变成空白")
+
+                Spacer(Modifier.height(20.dp))
+
+                SectionTitle("给个实用建议")
+                Text(
+                    text = "出发前在有网络的地方把要去的那片区域大致浏览一遍，" +
+                        "途中弱网时能多看到一点。这不等于离线地图，只是提高一点可用性。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                SectionTitle("为什么不做下载功能")
+                Text(
+                    text = "本 App 的离线能力只依赖 SDK 自身的缓存机制（等级 CACHE_ONLY），" +
+                        "不自建瓦片下载、不管理离线包。这样不会占掉几百 MB 存储，" +
+                        "也不用处理「下载到一半换城市」这类状态。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                SectionTitle("你找不到的东西（明确说明）")
+                Text(
+                    text = "没有城市列表、没有下载/暂停/更新/删除按钮。这不是藏起来了，是真的没有做。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(Modifier.height(28.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+    )
+    Spacer(Modifier.height(6.dp))
+}
+
+@Composable
+private fun Bullet(text: String) {
+    Text(
+        text = "· $text",
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(vertical = 2.dp),
+    )
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/privacy/PrivacyGateScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.privacy
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+/**
+ * 首启隐私门禁。
+ *
+ * 这是硬门槛：用户点「同意并继续」之前，
+ * 不允许创建地图引擎、不允许创建任何 MapView、不启动定位。
+ * 高德 SDK 的隐私合规接口也要等同意之后才调（见 XjApp.acceptPrivacy）。
+ */
+@Composable
+fun PrivacyGateScreen(
+    onAgree: () -> Unit,
+    onDecline: () -> Unit,
+) {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(text = "行迹", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                text = "记录走路、骑车、坐车的轨迹。只存在这台手机里。",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(text = "三件事请你先知道", style = MaterialTheme.typography.titleMedium)
+
+            PrivacyPoint("轨迹只存在本机", "没有账号、没有云端、没有服务器。删掉 App 数据，轨迹就没了，我们也找不回来。")
+            PrivacyPoint("AI Key 加密存储", "AI 聊天要用你自己的 API Key。它用系统级加密存在本机，不会写进日志，也不会出现在导出文件里。")
+            PrivacyPoint("不上传任何数据", "App 没有任何自建后端。除了你主动调用 AI 时把行程数据发给你自己填的 API，其他数据一律不出手机。")
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(text = "关于第三方 SDK", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "本 App 使用「高德地图 SDK」显示地图底图。该 SDK 会收集设备标识与位置信息，" +
+                    "仅用于地图渲染与定位展示；数据由高德按《高德开放平台隐私政策》处理。" +
+                    "不使用地图时不会启动它。",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onAgree,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("同意并继续")
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                TextButton(onClick = onDecline) {
+                    Text("不同意，退出")
+                }
+            }
+            Text(
+                text = "同意后，随时可以在「我的 → 隐私说明」里再看一遍。",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrivacyPoint(title: String, body: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = body,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/privacy/PrivacyPolicyScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.privacy
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+/**
+ * 隐私说明页。
+ *
+ * 原则：不写漂亮话，只写"数据到底去哪了"。
+ * 每一条都要能被用户自己验证（比如断网后功能是否还能用）。
+ */
+@Composable
+fun PrivacyPolicyScreen(onBack: () -> Unit) {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("返回") }
+                Text(text = "隐私说明", style = MaterialTheme.typography.titleLarge)
+            }
+            HorizontalDivider()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+            ) {
+                Text(
+                    text = "一句话：这个 App 没有服务器，你的数据全在你自己手机上。",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                Section(
+                    title = "轨迹只存本机",
+                    body = "所有 GPS 点存在手机本地的 SQLite 数据库里，不经过任何服务器。" +
+                        "没有账号、没有登录、没有云端同步。卸载 App 数据就没了（除非你自己导出）。",
+                )
+
+                Section(
+                    title = "AI Key 是加密存的",
+                    body = "你填的 API Key 用 Android Keystore 里的 AES-256-GCM 加密后才落盘，" +
+                        "解密用的密钥由系统芯片保管，App 自己都读不到明文。" +
+                        "换一台手机把这个文件拷过去也解不开。",
+                )
+
+                Section(
+                    title = "AI 请求发给你配置的服务商",
+                    body = "AI 聊天时，App 把**行程摘要**（距离、时长、分段这些）直接发到你填的 BaseURL，" +
+                        "不经过我们任何中转。数据怎么处理、留多久，取决于你选的那家服务商的条款。" +
+                        "不发原始轨迹点，也不发 Key 以外的任何凭据。",
+                )
+
+                Section(
+                    title = "导出文件由你控制",
+                    body = "导出 GPX/KML 时用系统的文件选择器，存哪个目录、给谁，完全由你决定。" +
+                        "导出文件里只有轨迹点、时间、分段方式和停留点——没有 Key、没有 BaseURL、没有聊天记录。",
+                )
+
+                Section(
+                    title = "不上传服务器",
+                    body = "本 App 没有任何自建后端。除高德地图 SDK 加载底图、" +
+                        "以及你自己触发的 AI 请求之外，App 不主动联网。",
+                )
+
+                Section(
+                    title = "用了哪些权限，为什么",
+                    body = "定位：记录轨迹，必须。\n" +
+                        "前台服务：锁屏后继续记录，必须。\n" +
+                        "通知：显示记录状态，必须。\n" +
+                        "存储：只在导出和分享时通过系统选择器访问，不扫描你的文件。",
+                )
+
+                Section(
+                    title = "怎么删数据",
+                    body = "卸载 App 即全部清除。想留着轨迹就先导出 GPX/KML 再卸载。" +
+                        "AI 设置里的 Key 可以在设置页清空，清空时会连 Keystore 里的密钥一起删掉。",
+                )
+
+                Spacer(Modifier.height(28.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun Section(title: String, body: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+    )
+    Spacer(Modifier.height(6.dp))
+    Text(
+        text = body.replace("**", ""),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(18.dp))
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.record
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.llyytt.path.XjApp
+import com.llyytt.path.core.format.Fmt
+import com.llyytt.path.data.db.TripEntity
+import com.llyytt.path.data.db.TripStatus
+import com.llyytt.path.data.repo.StartOutcome
+import com.llyytt.path.location.LocationError
+import com.llyytt.path.service.RecordingService
+import com.llyytt.path.service.RecordingStateHolder
+import kotlinx.coroutines.launch
+
+/**
+ * 记录页。本步只做最小可用：开始 / 暂停 / 继续 / 结束 + 实时距离时长。
+ * 行程列表、详情、地图，都属于第 4 步，这里不碰。
+ */
+@Composable
+fun RecordScreen(
+    onOpenTrips: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenAi: () -> Unit,
+) {
+    val context = LocalContext.current
+    val app = context.applicationContext as XjApp
+    // 设置开关：默认关。关着的时候这一块完全不渲染
+    val showSpeed = app.settings.showInstantSpeed
+    val state by RecordingStateHolder.state.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    var message by remember { mutableStateOf<String?>(null) }
+    var unfinished by remember { mutableStateOf<TripEntity?>(null) }
+
+    fun startNow() {
+        scope.launch {
+            when (val outcome = app.recordingRepository.startNewTrip()) {
+                is StartOutcome.Started -> {
+                    message = null
+                    RecordingService.start(context, outcome.trip.id)
+                }
+                is StartOutcome.AlreadyRunning -> {
+                    unfinished = outcome.trip
+                    message = "已经有一条没结束的行程"
+                }
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        if (granted[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+            startNow()
+        } else {
+            message = "没有定位权限，无法记录"
+        }
+    }
+
+    // 首次进入时看看有没有「上次没结束的行程」
+    LaunchedEffect(Unit) {
+        if (!state.isActive) {
+            unfinished = app.recordingRepository.unfinished()
+        }
+    }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onOpenAi) { Text("AI") }
+                TextButton(onClick = onOpenSettings) { Text("设置") }
+                TextButton(onClick = onOpenTrips) { Text("行程") }
+            }
+            Text(text = "行迹", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = when (state.status) {
+                    TripStatus.RECORDING -> "记录中"
+                    TripStatus.PAUSED -> "已暂停"
+                    TripStatus.FINISHED -> "已结束"
+                    null -> "未开始"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Text(
+                text = formatDistance(state.distanceMeters),
+                style = MaterialTheme.typography.displayMedium,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = formatDuration(state.activeMillis),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+
+            // 瞬时速度：设置里打开才显示。没有样本时显示「等待定位」，不显示 0.0
+            if (state.isActive && showSpeed) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = when {
+                        state.isStationary -> "静止"
+                        state.speedMps != null -> Fmt.speed(state.speedMps!!)
+                        else -> "等待定位"
+                    },
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = if (state.isStationary) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (state.isActive) {
+                Text(
+                    text = buildString {
+                        append("${state.pointCount} 个点")
+                        state.lastAccuracyM?.let { append(" · 精度 ±${it.toInt()}m") }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (state.status == TripStatus.RECORDING && !state.hasFirstFix) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "正在搜星…（首次定位可能要几十秒）",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                state.lastError?.let { err ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = describeError(err),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
+            message?.let {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (state.isActive) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (state.status == TripStatus.RECORDING) {
+                        OutlinedButton(onClick = { RecordingService.pause(context) }) {
+                            Text("暂停")
+                        }
+                    } else {
+                        Button(onClick = { RecordingService.resume(context, state.tripId) }) {
+                            Text("继续")
+                        }
+                    }
+                    OutlinedButton(onClick = { RecordingService.stop(context) }) {
+                        Text("结束")
+                    }
+                }
+            } else {
+                Button(
+                    onClick = {
+                        val fine = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.ACCESS_FINE_LOCATION,
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (fine) {
+                            startNow()
+                        } else {
+                            permissionLauncher.launch(requiredPermissions())
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("开始记录")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "离线：仅底图缓存，弱网可看部分区域，不保证完整",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+
+    // 未结束行程：只给两个出口，绝不「悄悄再开一条」
+    val pending = unfinished
+    if (pending != null && !state.isActive) {
+        AlertDialog(
+            onDismissRequest = { unfinished = null },
+            title = { Text("有一条没结束的行程") },
+            text = {
+                Text("开始于 ${formatTime(pending.startedAt)}，状态 ${statusText(pending.status)}。要继续它，还是结束它？")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    unfinished = null
+                    RecordingService.resume(context, pending.id)
+                }) { Text("继续") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        app.recordingRepository.finish(pending.id)
+                        unfinished = null
+                        message = "已结束旧行程，可以重新开始"
+                    }
+                }) { Text("结束它") }
+            },
+        )
+    }
+}
+
+private fun requiredPermissions(): Array<String> = buildList {
+    add(Manifest.permission.ACCESS_FINE_LOCATION)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        add(Manifest.permission.POST_NOTIFICATIONS)
+    }
+}.toTypedArray()
+
+private fun describeError(error: LocationError): String = when (error) {
+    LocationError.PERMISSION_DENIED -> "定位权限被拒绝，点「结束」后重新授权"
+    LocationError.PROVIDER_DISABLED -> "系统定位开关是关的，请打开定位"
+    LocationError.TIMEOUT -> "30 秒没拿到定位，可能是室内或没有信号"
+    LocationError.UNKNOWN -> "定位失败"
+}
+
+private fun statusText(status: TripStatus): String = when (status) {
+    TripStatus.RECORDING -> "记录中"
+    TripStatus.PAUSED -> "已暂停"
+    TripStatus.FINISHED -> "已结束"
+}
+
+private fun formatDistance(meters: Double): String =
+    if (meters < 1000) "%.0f 米".format(meters) else "%.2f 公里".format(meters / 1000.0)
+
+private fun formatDuration(millis: Long): String {
+    val totalSeconds = millis / 1000
+    val h = totalSeconds / 3600
+    val m = (totalSeconds % 3600) / 60
+    val s = totalSeconds % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
+}
+
+private fun formatTime(millis: Long): String {
+    val fmt = java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.CHINA)
+    return fmt.format(java.util.Date(millis))
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/settings/SettingsScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.settings
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import com.llyytt.path.XjApp
+import com.llyytt.path.data.ai.UrlValidator
+import kotlinx.coroutines.launch
+
+/**
+ * 设置页。
+ *
+ * 两组：显示偏好（瞬时速度开关）和 AI 服务（BaseURL / 模型 / Key）。
+ * Key 输入框永远回显空，只提示"已保存"——避免明文在屏幕上长期停留。
+ */
+@Composable
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onOpenOfflineInfo: () -> Unit,
+    onOpenPrivacy: () -> Unit,
+) {
+    val context = LocalContext.current
+    val app = context.applicationContext as XjApp
+    val scope = rememberCoroutineScope()
+
+    var showSpeed by remember { mutableStateOf(app.settings.showInstantSpeed) }
+
+    val config by app.aiSettings.config.collectAsState(initial = null)
+    var baseUrl by remember { mutableStateOf("") }
+    var model by remember { mutableStateOf("") }
+    var keyInput by remember { mutableStateOf("") }
+    var initialized by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<String?>(null) }
+    var pendingHttpUrl by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(config) {
+        val c = config
+        if (!initialized && c != null) {
+            baseUrl = c.baseUrl
+            model = c.model
+            initialized = true
+        }
+    }
+
+    fun doSave(url: String) {
+        scope.launch {
+            runCatching {
+                app.aiSettings.save(url, model.trim(), keyInput.trim())
+            }.onSuccess {
+                baseUrl = url
+                keyInput = ""
+                status = "已保存"
+            }.onFailure {
+                status = "保存失败：${it.message}"
+            }
+        }
+    }
+
+    fun save() {
+        status = null
+        when (val outcome = UrlValidator.validate(baseUrl)) {
+            is UrlValidator.Outcome.Invalid -> status = outcome.reason
+            is UrlValidator.Outcome.Https -> doSave(outcome.normalized)
+            is UrlValidator.Outcome.Http -> pendingHttpUrl = outcome.normalized
+        }
+    }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("返回") }
+                Text(text = "设置", style = MaterialTheme.typography.titleLarge)
+            }
+            HorizontalDivider()
+
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
+            ) {
+                // ---------- 显示 ----------
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("显示瞬时速度", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "记录页显示实时速度，回放时显示该时刻速度",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = showSpeed,
+                        onCheckedChange = {
+                            showSpeed = it
+                            app.settings.showInstantSpeed = it
+                        },
+                    )
+                }
+
+                Text(
+                    text = "默认关闭。室外步行精度验证通过前，建议先关着——" +
+                        "室内没有卫星信号时打开会一直显示「等待定位」。",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(top = 16.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenOfflineInfo() }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("离线地图说明", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "弱网时能看到多少、为什么不做下载",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        text = "›",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                HorizontalDivider()
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenPrivacy() }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("隐私说明", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "数据存在哪、AI 请求发到哪、怎么删",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        text = "›",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                HorizontalDivider()
+
+                // ---------- AI ----------
+                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                    Text("AI 服务", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "OpenAI 兼容接口。Key 用系统级加密存本机，不写日志、不进导出文件。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // 当前已保存了什么——不显示 Key 明文，只说"已保存"
+                    val saved = config
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = "当前已保存",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            if (saved == null || !saved.isReady) {
+                                Text(
+                                    text = "还没有配置。填下面的三项并保存即可。",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            } else {
+                                Text(
+                                    text = "BaseURL：${saved.baseUrl}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                Text(
+                                    text = "模型：${saved.model}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                Text(
+                                    text = "Key：已保存（加密存储，不显示原文）",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                TextButton(
+                                    onClick = {
+                                        scope.launch {
+                                            app.aiSettings.clear()
+                                            baseUrl = ""
+                                            model = ""
+                                            keyInput = ""
+                                            status = "已清除 AI 配置"
+                                        }
+                                    },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                                ) {
+                                    Text("清除配置", color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = baseUrl,
+                        onValueChange = { baseUrl = it; status = null },
+                        label = { Text("BaseURL") },
+                        placeholder = { Text("https://api.openai.com/v1") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = model,
+                        onValueChange = { model = it; status = null },
+                        label = { Text("模型名") },
+                        placeholder = { Text("gpt-4o-mini") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = keyInput,
+                        onValueChange = { keyInput = it; status = null },
+                        label = { Text("API Key") },
+                        placeholder = {
+                            Text(if (config?.apiKey?.isNotBlank() == true) "已保存，留空表示不修改" else "sk-...")
+                        },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Button(onClick = { save() }) { Text("保存") }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = status.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (status == "已保存") {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+
+    pendingHttpUrl?.let { url ->
+        AlertDialog(
+            onDismissRequest = { pendingHttpUrl = null },
+            title = { Text("这是明文传输") },
+            text = {
+                Text(
+                    "http:// 不加密。你和服务器之间的任何一跳都能看到 Key 和行程内容，" +
+                        "公共 Wi-Fi 下尤其危险。\n\n确定要用 $url 吗？",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingHttpUrl = null
+                    doSave(url)
+                }) { Text("我知道风险，继续") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingHttpUrl = null }) { Text("改用 https") }
+            },
+        )
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.trips
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.llyytt.path.XjApp
+import com.llyytt.path.core.format.Fmt
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.rules.Tuning
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TransportMode
+import com.llyytt.path.data.db.TripSegmentEntity
+import com.llyytt.path.data.repo.TripDetail
+import kotlinx.coroutines.launch
+
+/**
+ * 分段编辑器：自动分段 + 三个手动操作。
+ *
+ * 三个操作各走一个事务，失败就整体回滚（见 SegmentRepository）。
+ * 这里只负责交互与提示，不直接碰数据库。
+ */
+@Composable
+fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val app = context.applicationContext as XjApp
+    val scope = rememberCoroutineScope()
+
+    var detail by remember { mutableStateOf<TripDetail?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var splitTarget by remember { mutableStateOf<TripSegmentEntity?>(null) }
+    var mergeTarget by remember { mutableStateOf<Pair<TripSegmentEntity, TripSegmentEntity>?>(null) }
+
+    suspend fun reload() {
+        detail = app.tripRepository.detail(tripId)
+    }
+
+    LaunchedEffect(tripId) { reload() }
+
+    fun run(action: suspend () -> Unit) {
+        if (busy) return
+        busy = true
+        scope.launch {
+            try {
+                action()
+                reload()
+            } catch (t: Throwable) {
+                error = t.message ?: "操作失败"
+            } finally {
+                busy = false
+            }
+        }
+    }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("返回") }
+                Text(
+                    text = "分段",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    enabled = !busy,
+                    onClick = { run { app.segmentRepository.autoSegment(tripId) } },
+                ) {
+                    Text("自动分段")
+                }
+            }
+
+            val data = detail
+            when {
+                data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+
+                data.segments.isEmpty() -> Box(
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("还没有分段", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "点右上角「自动分段」按速度和停顿自动切分。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    itemsIndexed(data.segments) { index, segment ->
+                        val next = data.segments.getOrNull(index + 1)
+                        SegmentCard(
+                            index = index,
+                            segment = segment,
+                            points = data.points,
+                            canSplit = segment.endPointSeq > segment.startPointSeq,
+                            canMerge = next != null && next.startPointSeq == segment.endPointSeq + 1,
+                            enabled = !busy,
+                            onChangeMode = {
+                                run { app.segmentRepository.setMode(segment.id, nextMode(segment.mode)) }
+                            },
+                            onSplit = { splitTarget = segment },
+                            onMerge = { next?.let { mergeTarget = segment to it } },
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------- 拆分对话框 ----------
+    splitTarget?.let { segment ->
+        val minSeq = segment.startPointSeq + 1
+        val maxSeq = segment.endPointSeq
+        var at by remember(segment.id) {
+            mutableFloatStateOf(((minSeq + maxSeq) / 2).toFloat())
+        }
+        AlertDialog(
+            onDismissRequest = { splitTarget = null },
+            title = { Text("在这一段的哪个位置切开？") },
+            text = {
+                Column {
+                    Text(
+                        text = segmentRangeText(segment),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    val split = at.toInt()
+                    val points = detail?.points ?: emptyList()
+                    Text(
+                        "前段 ${Fmt.duration(segmentDuration(points, segment.startPointSeq, split - 1))}" +
+                            "  /  后段 ${Fmt.duration(segmentDuration(points, split, segment.endPointSeq))}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Slider(
+                        value = at,
+                        onValueChange = { at = it },
+                        valueRange = minSeq.toFloat()..maxSeq.toFloat(),
+                        steps = (maxSeq - minSeq - 1).coerceAtLeast(0),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val cut = at.toInt()
+                    splitTarget = null
+                    run { app.segmentRepository.split(segment.id, cut) }
+                }) { Text("拆分") }
+            },
+            dismissButton = {
+                TextButton(onClick = { splitTarget = null }) { Text("取消") }
+            },
+        )
+    }
+
+    // ---------- 合并对话框 ----------
+    mergeTarget?.let { (first, second) ->
+        val points = detail?.points ?: emptyList()
+        val mergedMillis = segmentDuration(points, first.startPointSeq, second.endPointSeq)
+        val tooShort = mergedMillis < Tuning.Segment.MIN_SEGMENT_MS
+        AlertDialog(
+            onDismissRequest = { mergeTarget = null },
+            title = { Text("合并这两段？") },
+            text = {
+                Column {
+                    Text("${segmentRangeText(first)}\n合并 ${segmentRangeText(second)}")
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "合并后时长 ${Fmt.duration(mergedMillis)}" +
+                            if (tooShort) {
+                                "，短于建议的 ${Tuning.Segment.MIN_SEGMENT_MS / 1000} 秒。"
+                            } else {
+                                "。"
+                            },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (tooShort) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (tooShort) {
+                        Text(
+                            "手动操作优先于规则，你确认就执行。",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    mergeTarget = null
+                    run { app.segmentRepository.merge(first.id, second.id) }
+                }) { Text("合并") }
+            },
+            dismissButton = {
+                TextButton(onClick = { mergeTarget = null }) { Text("取消") }
+            },
+        )
+    }
+
+    // ---------- 错误 ----------
+    error?.let { message ->
+        AlertDialog(
+            onDismissRequest = { error = null },
+            title = { Text("操作没有生效") },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { error = null }) { Text("知道了") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun SegmentCard(
+    index: Int,
+    segment: TripSegmentEntity,
+    points: List<TrackPointEntity>,
+    canSplit: Boolean,
+    canMerge: Boolean,
+    enabled: Boolean,
+    onChangeMode: () -> Unit,
+    onSplit: () -> Unit,
+    onMerge: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "[${index + 1}] ${modeLabel(segment.mode)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = Fmt.duration(segmentDuration(points, segment.startPointSeq, segment.endPointSeq)),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Text(
+                text = "${segmentRangeText(segment)}  ·  " +
+                    Fmt.distance(segmentDistance(points, segment.startPointSeq, segment.endPointSeq)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onChangeMode, enabled = enabled) { Text("改方式") }
+                TextButton(onClick = onSplit, enabled = enabled && canSplit) { Text("拆分") }
+                TextButton(onClick = onMerge, enabled = enabled && canMerge) { Text("合并下段") }
+            }
+        }
+    }
+}
+
+private fun modeLabel(mode: TransportMode): String = when (mode) {
+    TransportMode.WALK -> "走路"
+    TransportMode.BIKE -> "骑车"
+    TransportMode.CAR -> "坐车"
+    TransportMode.UNKNOWN -> "未知"
+}
+
+private fun nextMode(mode: TransportMode): TransportMode = when (mode) {
+    TransportMode.WALK -> TransportMode.BIKE
+    TransportMode.BIKE -> TransportMode.CAR
+    else -> TransportMode.WALK
+}
+
+private fun segmentRangeText(s: TripSegmentEntity): String = "seq ${s.startPointSeq}..${s.endPointSeq}"
+
+private fun segmentDuration(points: List<TrackPointEntity>, startSeq: Int, endSeq: Int): Long {
+    val start = points.getOrNull(startSeq)?.recordedAt ?: return 0
+    val end = points.getOrNull(endSeq)?.recordedAt ?: return 0
+    return (end - start).coerceAtLeast(0)
+}
+
+private fun segmentDistance(points: List<TrackPointEntity>, startSeq: Int, endSeq: Int): Double {
+    if (endSeq <= startSeq) return 0.0
+    var sum = 0.0
+    for (seq in startSeq until endSeq) {
+        val a = points.getOrNull(seq) ?: continue
+        val b = points.getOrNull(seq + 1) ?: continue
+        sum += Wgs84(a.lat, a.lng).distanceTo(Wgs84(b.lat, b.lng))
+    }
+    return sum
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/trips/TrackPainter.kt -->
+
+```kotlin
+package com.llyytt.path.feature.trips
+
+import com.llyytt.path.core.geo.PolylineSimplifier
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.rules.Tuning
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TransportMode
+import com.llyytt.path.data.db.TripSegmentEntity
+import com.llyytt.path.map.MapPolyline
+
+enum class TrackColorMode { SPEED, MODE }
+
+/**
+ * 把轨迹点转成地图能画的折线。
+ *
+ * 两个必须做对的点：
+ * 1. startsNewSegment = true 的点之前必须断开，不能连成直线（那等于伪造轨迹）。
+ * 2. 画之前抽稀，否则长轨迹会卡；但**只影响呈现，不动原始数据**。
+ */
+object TrackPainter {
+
+    const val COLOR_WALK = 0xFF2F6B57.toInt()
+    const val COLOR_BIKE = 0xFFE08A2E.toInt()
+    const val COLOR_CAR = 0xFFC0392B.toInt()
+    const val COLOR_SLOW = 0xFF7F8C8D.toInt()
+    const val COLOR_UNKNOWN = 0xFF9AA0A6.toInt()
+
+    private const val WIDTH_DP = 6f
+    private const val EPSILON_METERS = 2.0
+
+    fun build(
+        points: List<TrackPointEntity>,
+        segments: List<TripSegmentEntity>,
+        mode: TrackColorMode,
+    ): List<MapPolyline> {
+        if (points.size < 2) return emptyList()
+        val runs = splitRuns(points)
+        val out = ArrayList<MapPolyline>()
+
+        runs.forEachIndexed { runIndex, run ->
+            when (mode) {
+                TrackColorMode.MODE -> out += buildBySegment(run, segments, runIndex)
+                TrackColorMode.SPEED -> out += buildBySpeed(run, runIndex)
+            }
+        }
+        return out
+    }
+
+    /** 按 startsNewSegment 切段。 */
+    fun splitRuns(points: List<TrackPointEntity>): List<List<TrackPointEntity>> {
+        val runs = ArrayList<List<TrackPointEntity>>()
+        var current = ArrayList<TrackPointEntity>()
+        for (p in points) {
+            if (p.startsNewSegment && current.isNotEmpty()) {
+                runs.add(current)
+                current = ArrayList()
+            }
+            current.add(p)
+        }
+        if (current.isNotEmpty()) runs.add(current)
+        return runs
+    }
+
+    // ---------- 按交通方式 ----------
+
+    private fun buildBySegment(
+        run: List<TrackPointEntity>,
+        segments: List<TripSegmentEntity>,
+        runIndex: Int,
+    ): List<MapPolyline> {
+        if (run.size < 2) return emptyList()
+
+        if (segments.isEmpty()) {
+            // 第 5 步之前没有分段数据：整段用中性色
+            return listOf(polyline("m-$runIndex", run, COLOR_UNKNOWN))
+        }
+
+        // 按 segment 边界把 run 切开；跨段时各自上色
+        val out = ArrayList<MapPolyline>()
+        var start = 0
+        var currentMode = modeAt(run[0].seq, segments)
+        for (i in 1 until run.size) {
+            val m = modeAt(run[i].seq, segments)
+            if (m != currentMode) {
+                // 边界点两边都要有，避免出现视觉断口
+                out += polyline("m-$runIndex-$start", run.subList(start, i + 1), colorOf(currentMode))
+                start = i
+                currentMode = m
+            }
+        }
+        out += polyline("m-$runIndex-$start", run.subList(start, run.size), colorOf(currentMode))
+        return out
+    }
+
+    private fun modeAt(seq: Int, segments: List<TripSegmentEntity>): TransportMode =
+        segments.firstOrNull { seq in it.startPointSeq..it.endPointSeq }?.mode ?: TransportMode.UNKNOWN
+
+    private fun colorOf(mode: TransportMode): Int = when (mode) {
+        TransportMode.WALK -> COLOR_WALK
+        TransportMode.BIKE -> COLOR_BIKE
+        TransportMode.CAR -> COLOR_CAR
+        TransportMode.UNKNOWN -> COLOR_UNKNOWN
+    }
+
+    // ---------- 按速度 ----------
+
+    private fun buildBySpeed(run: List<TrackPointEntity>, runIndex: Int): List<MapPolyline> {
+        if (run.size < 2) return emptyList()
+
+        val buckets = IntArray(run.size) { speedBucket(speedAt(run, it)) }
+        val out = ArrayList<MapPolyline>()
+        var start = 0
+        for (i in 1 until run.size) {
+            if (buckets[i] != buckets[start]) {
+                out += polyline("s-$runIndex-$start", run.subList(start, i + 1), colorOfBucket(buckets[start]))
+                start = i
+            }
+        }
+        out += polyline("s-$runIndex-$start", run.subList(start, run.size), colorOfBucket(buckets[start]))
+        return out
+    }
+
+    private fun speedAt(run: List<TrackPointEntity>, index: Int): Double {
+        val p = run[index]
+        p.speedMps?.let { if (it > 0f) return it.toDouble() }
+        // 系统没给速度就用相邻点算
+        val a = run.getOrNull(index - 1) ?: return 0.0
+        val b = run.getOrNull(index + 1) ?: p
+        val dt = (p.recordedAt - a.recordedAt) / 1000.0
+        if (dt <= 0.2) return 0.0
+        return Wgs84(a.lat, a.lng).distanceTo(Wgs84(p.lat, p.lng)) / dt
+    }
+
+    private fun speedBucket(mps: Double): Int = when {
+        mps < Tuning.Segment.STOP_SPEED_MPS -> 0 // 基本没动
+        mps < Tuning.Segment.WALK_MAX_MPS -> 1   // 走路
+        mps < Tuning.Segment.BIKE_MAX_MPS -> 2   // 骑车
+        else -> 3                                // 车
+    }
+
+    private fun colorOfBucket(bucket: Int): Int = when (bucket) {
+        0 -> COLOR_SLOW
+        1 -> COLOR_WALK
+        2 -> COLOR_BIKE
+        else -> COLOR_CAR
+    }
+
+    private fun polyline(id: String, run: List<TrackPointEntity>, color: Int): MapPolyline {
+        val raw = run.map { Wgs84(it.lat, it.lng) }
+        val simplified = PolylineSimplifier.simplify(raw, EPSILON_METERS)
+        return MapPolyline(
+            id = id,
+            points = if (simplified.size >= 2) simplified else raw,
+            colorArgb = color,
+            widthDp = WIDTH_DP,
+        )
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/trips/TripDetailScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.trips
+
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.llyytt.path.core.export.ShareComposer
+import com.llyytt.path.core.export.TrackExporter
+import com.llyytt.path.core.export.toExportModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.llyytt.path.XjApp
+import com.llyytt.path.core.format.Fmt
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.geo.Wgs84Bounds
+import com.llyytt.path.core.rules.SpeedSeries
+import com.llyytt.path.data.repo.TripDetail
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
+
+/**
+ * 行程详情：地图 + 统计 + 简版回放。
+ *
+ * 回放刻意做得很轻：一个滑块 + 一个小圆点 + 跟随开关，不做 3D、不做动画曲线。
+ * 渲染分两条路径：轨迹只在切换着色方式时重画，光标每次只移动一个标记，
+ * 避免拖动滑块时把整条轨迹反复重建。
+ */
+@Composable
+fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Unit) {
+    val context = LocalContext.current
+    val app = context.applicationContext as XjApp
+    val engine = remember { app.mapEngine() }
+    val controller = remember { engine.createController() }
+
+    var detail by remember { mutableStateOf<TripDetail?>(null) }
+    var colorMode by remember { mutableStateOf(TrackColorMode.SPEED) }
+    var cursor by remember { mutableFloatStateOf(0f) }
+    var playing by remember { mutableStateOf(false) }
+    var follow by remember { mutableStateOf(false) }
+
+    LaunchedEffect(tripId) {
+        detail = app.tripRepository.detail(tripId)
+    }
+
+    val d = detail
+
+    // ---------------- 导出 / 分享 ----------------
+    val scope = rememberCoroutineScope()
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+    var showFormatDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    fun writeExport(target: Uri, format: TrackExporter.Format) {
+        val data = d ?: return
+        scope.launch {
+            try {
+                val content = TrackExporter.build(
+                    data.toExportModel(title = Fmt.dateTime(data.trip.startedAt)),
+                    format,
+                )
+                // 导出前的最后一道闸：宁可导出失败，也不能把敏感串写进文件
+                val findings = TrackExporter.scanForSensitiveContent(content)
+                if (findings.isNotEmpty()) {
+                    exportMessage = "已中止：文件里发现可疑内容（${findings.joinToString()}）"
+                    return@launch
+                }
+                val bytes = content.toByteArray(Charsets.UTF_8)
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(target)?.use { it.write(bytes) }
+                }
+                exportMessage = "已导出 ${format.name}：${bytes.size / 1024} KB，${data.points.size} 个点"
+            } catch (t: Throwable) {
+                exportMessage = "导出失败：${t.message ?: t.javaClass.simpleName}"
+            }
+        }
+    }
+
+    val gpxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(TrackExporter.Format.GPX.mimeType),
+    ) { uri -> uri?.let { writeExport(it, TrackExporter.Format.GPX) } }
+
+    val kmlLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(TrackExporter.Format.KML.mimeType),
+    ) { uri -> uri?.let { writeExport(it, TrackExporter.Format.KML) } }
+
+    fun exportName(format: TrackExporter.Format): String {
+        val stamp = java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US)
+            .format(java.util.Date(d?.trip?.startedAt ?: System.currentTimeMillis()))
+        return "xingji-$stamp.${format.extension}"
+    }
+
+    fun shareTrip() {
+        val data = d ?: return
+        scope.launch {
+            val map = controller.snapshot()
+            if (map == null) {
+                exportMessage = "地图还没准备好，稍后再试"
+                return@launch
+            }
+            try {
+                val image = ShareComposer.compose(
+                    map = map,
+                    title = Fmt.dateTime(data.trip.startedAt),
+                    subtitle = "行迹 · ${data.stats.pointCount} 个点 · ${data.segments.size} 段",
+                    stats = listOf(
+                        "距离" to Fmt.distance(data.stats.distanceMeters),
+                        "时长" to Fmt.duration(data.stats.activeMillis),
+                        "均速" to Fmt.speed(data.stats.avgSpeedMps),
+                        "最高" to Fmt.speed(data.stats.maxSpeedMps),
+                    ),
+                )
+                val uri = ShareComposer.writeToCache(context, image, "xingji-share.png")
+                ShareComposer.share(context, uri, "行迹 · ${Fmt.dateTime(data.trip.startedAt)}")
+            } catch (t: Throwable) {
+                exportMessage = "分享失败：${t.message ?: t.javaClass.simpleName}"
+            }
+        }
+    }
+
+    // 回放速度：跟随设置开关，关着就不算
+    val showSpeed = app.settings.showInstantSpeed
+    val speeds = remember(d, showSpeed) {
+        if (showSpeed) SpeedSeries.smoothed(d?.points ?: emptyList()) else emptyList()
+    }
+
+    // 轨迹：只在数据或着色方式变化时重画
+    LaunchedEffect(d, colorMode) {
+        val data = d ?: return@LaunchedEffect
+        controller.renderTrack(TrackPainter.build(data.points, data.segments, colorMode))
+        val bounds = Wgs84Bounds.of(data.points.map { Wgs84(it.lat, it.lng) })
+        if (bounds != null) controller.fitBounds(bounds, 96)
+        cursor = (data.points.size - 1).coerceAtLeast(0).toFloat()
+    }
+
+    // 光标：每次只移动一个标记
+    LaunchedEffect(cursor, d) {
+        val data = d ?: return@LaunchedEffect
+        val p = data.points.getOrNull(cursor.roundToInt())
+        if (p == null) {
+            controller.renderCursor(null)
+            return@LaunchedEffect
+        }
+        val wgs = Wgs84(p.lat, p.lng)
+        controller.renderCursor(wgs)
+        if (follow) controller.moveCameraTo(wgs, 17f)
+    }
+
+    // 播放：按点数自适应步长，让任何长度的行程都在 30 秒左右播完
+    LaunchedEffect(playing, d) {
+        val data = d ?: return@LaunchedEffect
+        val total = data.points.size
+        if (total <= 1) {
+            playing = false
+            return@LaunchedEffect
+        }
+        val step = maxOf(1, total / 250)
+        while (playing) {
+            delay(120)
+            val next = cursor.roundToInt() + step
+            if (next >= total) {
+                cursor = (total - 1).toFloat()
+                playing = false
+            } else {
+                cursor = next.toFloat()
+            }
+        }
+    }
+
+    val cumulative = remember(d) {
+        val pts = d?.points ?: emptyList()
+        val arr = DoubleArray(pts.size)
+        var sum = 0.0
+        for (i in 1 until pts.size) {
+            val a = pts[i - 1]
+            val b = pts[i]
+            if (!b.startsNewSegment) {
+                sum += Wgs84(a.lat, a.lng).distanceTo(Wgs84(b.lat, b.lng))
+            }
+            arr[i] = sum
+        }
+        arr
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        engine.MapView(controller = controller, modifier = Modifier.fillMaxSize())
+
+        // 顶部栏
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        ) {
+            Row(
+                modifier = Modifier.statusBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("返回") }
+                Text(
+                    text = d?.let { Fmt.dateTime(it.trip.startedAt) } ?: "行程详情",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = {
+                    colorMode = if (colorMode == TrackColorMode.SPEED) TrackColorMode.MODE else TrackColorMode.SPEED
+                }) {
+                    Text(if (colorMode == TrackColorMode.SPEED) "按速度" else "按方式")
+                }
+            }
+        }
+
+        // 底部面板
+        Card(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(12.dp)
+                .fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                if (d == null) {
+                    Text("加载中…", style = MaterialTheme.typography.bodyMedium)
+                    return@Card
+                }
+
+                val stats = d.stats
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Stat("距离", Fmt.distance(stats.distanceMeters))
+                    Stat("活动时长", Fmt.duration(stats.activeMillis))
+                    Stat("均速", Fmt.speed(stats.avgSpeedMps))
+                    Stat("最高", Fmt.speed(stats.maxSpeedMps))
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("${stats.pointCount} 个点", style = MaterialTheme.typography.labelMedium)
+                    if (stats.gapCount > 0) {
+                        Text("${stats.gapCount} 处中断", style = MaterialTheme.typography.labelMedium)
+                    }
+                    if (d.stays.isNotEmpty()) {
+                        Text("${d.stays.size} 个停留", style = MaterialTheme.typography.labelMedium)
+                    }
+                    if (d.segments.isEmpty()) {
+                        Text(
+                            "尚未分段 · 编辑",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { onOpenSegments() },
+                        )
+                    } else {
+                        Text(
+                            "${d.segments.size} 段 · 编辑",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { onOpenSegments() },
+                        )
+                    }
+                }
+
+                Text(
+                    text = "底图缓存：弱网可看部分区域，不保证完整",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                if (d.points.size > 1) {
+                    Spacer(Modifier.height(4.dp))
+                    val idx = cursor.roundToInt()
+                    val p = d.points.getOrNull(idx)
+                    val speed = speeds.getOrNull(idx)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = p?.let { Fmt.clock(it.recordedAt) } ?: "--:--",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        if (showSpeed) {
+                            Text(
+                                text = when {
+                                    speed?.stationary == true -> "静止"
+                                    speed?.smoothedMps != null -> Fmt.speed(speed.smoothedMps)
+                                    else -> "--"
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        Text(
+                            text = p?.let { "已走 ${Fmt.distance(cumulative.getOrElse(idx) { 0.0 })}" } ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+
+                    Slider(
+                        value = cursor,
+                        onValueChange = {
+                            playing = false
+                            cursor = it
+                        },
+                        valueRange = 0f..(d.points.size - 1).toFloat(),
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(onClick = {
+                            if (!playing && cursor >= d.points.size - 1) cursor = 0f
+                            playing = !playing
+                            if (playing) follow = true
+                        }) {
+                            Text(if (playing) "暂停" else "回放")
+                        }
+                        TextButton(onClick = { follow = !follow }) {
+                            Text(if (follow) "跟随：开" else "跟随：关")
+                        }
+                    }
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "这条行程没有轨迹点（可能是开始后一直没定位成功）",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { showFormatDialog = true }) { Text("导出") }
+                    TextButton(onClick = { shareTrip() }) { Text("分享图") }
+                    TextButton(onClick = { showDeleteDialog = true }) {
+                        Text("删除", color = MaterialTheme.colorScheme.error)
+                    }
+                    exportMessage?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("删除这条行程？") },
+                text = {
+                    Text(
+                        "轨迹点、分段、停留记录会一起删掉，不能恢复。\n" +
+                            "如果想留着，先点「导出」存一份 GPX 或 KML。",
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDeleteDialog = false
+                        scope.launch {
+                            try {
+                                app.tripRepository.delete(tripId)
+                                onBack()
+                            } catch (t: Throwable) {
+                                exportMessage = "删除失败：${t.message ?: t.javaClass.simpleName}"
+                            }
+                        }
+                    }) {
+                        Text("删除", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+                },
+            )
+        }
+
+        if (showFormatDialog) {
+            AlertDialog(
+                onDismissRequest = { showFormatDialog = false },
+                title = { Text("导出成什么格式") },
+                text = {
+                    Text(
+                        "GPX 1.1 和 KML 2.2 都是 WGS84 坐标，能直接拖进 Google Earth。" +
+                            "文件里只有轨迹点、时间、分段方式和停留点。",
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showFormatDialog = false
+                        gpxLauncher.launch(exportName(TrackExporter.Format.GPX))
+                    }) { Text("GPX") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showFormatDialog = false
+                        kmlLauncher.launch(exportName(TrackExporter.Format.KML))
+                    }) { Text("KML") }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun Stat(label: String, value: String) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/feature/trips/TripListScreen.kt -->
+
+```kotlin
+package com.llyytt.path.feature.trips
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.llyytt.path.XjApp
+import com.llyytt.path.core.format.Fmt
+import com.llyytt.path.data.db.TripStatus
+import com.llyytt.path.data.repo.TripListItem
+
+@Composable
+fun TripListScreen(onOpen: (Long) -> Unit, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val app = context.applicationContext as XjApp
+
+    var items by remember { mutableStateOf<List<TripListItem>?>(null) }
+    var reload by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(reload) {
+        items = app.tripRepository.list()
+    }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onBack) { Text("返回") }
+                Text(
+                    text = "行程",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { reload++ }) { Text("刷新") }
+            }
+
+            val list = items
+            when {
+                list == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+
+                list.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("还没有行程，先去记录一次", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(list, key = { it.trip.id }) { item ->
+                        TripRow(item = item, onClick = { onOpen(item.trip.id) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TripRow(item: TripListItem, onClick: () -> Unit) {
+    val trip = item.trip
+    val stats = item.stats
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = Fmt.dateTime(trip.startedAt),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = statusLabel(trip.status),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (trip.status == TripStatus.FINISHED) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Metric("距离", Fmt.distance(stats.distanceMeters))
+                Metric("时长", Fmt.duration(stats.activeMillis))
+                Metric("点", "${stats.pointCount}")
+                if (stats.gapCount > 0) Metric("断点", "${stats.gapCount}")
+            }
+        }
+    }
+}
+
+@Composable
+private fun Metric(label: String, value: String) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+private fun statusLabel(status: TripStatus): String = when (status) {
+    TripStatus.RECORDING -> "记录中"
+    TripStatus.PAUSED -> "已暂停"
+    TripStatus.FINISHED -> "已结束"
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/MainActivity.kt -->
+
+```kotlin
+package com.llyytt.path
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.llyytt.path.feature.ai.AiChatScreen
+import com.llyytt.path.feature.offline.OfflineInfoScreen
+import com.llyytt.path.feature.privacy.PrivacyGateScreen
+import com.llyytt.path.feature.privacy.PrivacyPolicyScreen
+import com.llyytt.path.feature.record.RecordScreen
+import com.llyytt.path.feature.settings.SettingsScreen
+import com.llyytt.path.feature.trips.SegmentEditorScreen
+import com.llyytt.path.feature.trips.TripDetailScreen
+import com.llyytt.path.feature.trips.TripListScreen
+
+private sealed interface Screen {
+    data object Record : Screen
+    data object Trips : Screen
+    data object Settings : Screen
+    data object Offline : Screen
+    data object Privacy : Screen
+    data object Ai : Screen
+    data class Detail(val tripId: Long) : Screen
+    data class Segments(val tripId: Long) : Screen
+}
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val app = application as XjApp
+
+        setContent {
+            MaterialTheme {
+                var accepted by remember { mutableStateOf(app.isPrivacyAccepted) }
+                var screen by remember { mutableStateOf<Screen>(Screen.Record) }
+
+                BackHandler(enabled = accepted && screen != Screen.Record) {
+                    screen = when (val current = screen) {
+                        is Screen.Detail -> Screen.Trips
+                        is Screen.Segments -> Screen.Detail(current.tripId)
+                        is Screen.Offline -> Screen.Settings
+                        is Screen.Privacy -> Screen.Settings
+                        is Screen.Ai -> Screen.Record
+                        else -> Screen.Record
+                    }
+                }
+
+                if (!accepted) {
+                    PrivacyGateScreen(
+                        onAgree = {
+                            app.acceptPrivacy()
+                            accepted = true
+                        },
+                        onDecline = { finish() },
+                    )
+                    return@MaterialTheme
+                }
+
+                when (val current = screen) {
+                    Screen.Record -> RecordScreen(
+                        onOpenTrips = { screen = Screen.Trips },
+                        onOpenSettings = { screen = Screen.Settings },
+                        onOpenAi = { screen = Screen.Ai },
+                    )
+                    Screen.Trips -> TripListScreen(
+                        onOpen = { screen = Screen.Detail(it) },
+                        onBack = { screen = Screen.Record },
+                    )
+                    Screen.Settings -> SettingsScreen(
+                        onBack = { screen = Screen.Record },
+                        onOpenOfflineInfo = { screen = Screen.Offline },
+                        onOpenPrivacy = { screen = Screen.Privacy },
+                    )
+                    Screen.Privacy -> PrivacyPolicyScreen(
+                        onBack = { screen = Screen.Settings },
+                    )
+                    Screen.Offline -> OfflineInfoScreen(
+                        onBack = { screen = Screen.Settings },
+                    )
+                    Screen.Ai -> AiChatScreen(
+                        onBack = { screen = Screen.Record },
+                        onOpenSettings = { screen = Screen.Settings },
+                    )
+                    is Screen.Detail -> TripDetailScreen(
+                        tripId = current.tripId,
+                        onBack = { screen = Screen.Trips },
+                        onOpenSegments = { screen = Screen.Segments(current.tripId) },
+                    )
+                    is Screen.Segments -> SegmentEditorScreen(
+                        tripId = current.tripId,
+                        onBack = { screen = Screen.Detail(current.tripId) },
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/XjApp.kt -->
+
+```kotlin
+package com.llyytt.path
+
+import android.app.Application
+import com.llyytt.path.data.ai.AiClient
+import com.llyytt.path.data.ai.AiSettingsStore
+import com.llyytt.path.data.db.AppDatabase
+import com.llyytt.path.data.repo.AiChatRepository
+import com.llyytt.path.data.repo.RecordingRepository
+import com.llyytt.path.data.repo.SegmentRepository
+import com.llyytt.path.data.repo.TripRepository
+import com.llyytt.path.data.settings.SettingsStore
+import com.llyytt.path.location.GnssLocationSource
+import com.llyytt.path.location.LocationSource
+import com.llyytt.path.map.MapEngine
+import com.llyytt.path.mapimpl.amap.AMapEngine
+
+/**
+ * 全 App 唯一允许 import mapimpl 的地方。
+ *
+ * 地图引擎懒创建，且创建前检查隐私已同意 —— 从结构上保证「同意前不存在 MapView」。
+ */
+class XjApp : Application() {
+
+    lateinit var settings: SettingsStore
+        private set
+
+    lateinit var database: AppDatabase
+        private set
+
+    lateinit var recordingRepository: RecordingRepository
+        private set
+
+    lateinit var tripRepository: TripRepository
+        private set
+
+    lateinit var segmentRepository: SegmentRepository
+        private set
+
+    lateinit var aiChatRepository: AiChatRepository
+        private set
+
+    lateinit var aiSettings: AiSettingsStore
+        private set
+
+    val aiClient: AiClient = AiClient()
+
+    private var engine: MapEngine? = null
+    private var location: LocationSource? = null
+
+    val isPrivacyAccepted: Boolean
+        get() = settings.privacyAccepted
+
+    override fun onCreate() {
+        super.onCreate()
+        settings = SettingsStore(this)
+        database = AppDatabase.get(this)
+        recordingRepository = RecordingRepository(database)
+        tripRepository = TripRepository(database)
+        segmentRepository = SegmentRepository(database)
+        aiChatRepository = AiChatRepository(database.aiChatDao())
+        aiSettings = AiSettingsStore(this)
+        // 注意：这里**不**初始化高德 SDK，等用户同意隐私之后再 initSdk
+    }
+
+    fun acceptPrivacy() {
+        settings.privacyAccepted = true
+        ensureMapEngine()
+    }
+
+    fun mapEngine(): MapEngine = ensureMapEngine()
+
+    fun locationSource(): LocationSource =
+        location ?: GnssLocationSource(this).also { location = it }
+
+    private fun ensureMapEngine(): MapEngine {
+        engine?.let { return it }
+        check(settings.privacyAccepted) { "隐私协议未同意，禁止创建地图引擎" }
+        AMapEngine.initSdk(this)
+        return AMapEngine(this).also { engine = it }
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/location/GnssLocationSource.kt -->
+
+```kotlin
+package com.llyytt.path.location
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import androidx.core.content.ContextCompat
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.rules.Tuning
+import com.llyytt.path.data.db.PointSource
+
+/**
+ * 系统 GNSS 定位。MVP 唯一的定位实现。
+ *
+ * 为什么先用系统 GNSS 而不是高德定位 SDK：
+ * 1. 系统 GNSS 输出的就是 WGS84，入库零转换、零误差。
+ * 2. 不引入第二个厂商 SDK，体积和隐私面都小。
+ * 3. 不依赖 GMS（国行机没有 FusedLocationProvider）。
+ * 代价是冷启动首次定位慢、室内基本没点。
+ */
+class GnssLocationSource(context: Context) : LocationSource {
+
+    private val appContext = context.applicationContext
+    private val manager: LocationManager? =
+        appContext.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    private var onFix: ((LocationFix) -> Unit)? = null
+    private var onError: ((LocationError) -> Unit)? = null
+    private var running = false
+    private var gotAnyFix = false
+    private var currentIntervalMs = 0L
+
+    override val isRunning: Boolean
+        get() = running
+
+    private val listener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            gotAnyFix = true
+            val fix = location.toFix()
+            adaptInterval(location)
+            onFix?.invoke(fix)
+        }
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+
+        override fun onProviderEnabled(provider: String) = Unit
+
+        override fun onProviderDisabled(provider: String) {
+            onError?.invoke(LocationError.PROVIDER_DISABLED)
+            stop()
+        }
+    }
+
+    private val timeoutRunnable = Runnable {
+        if (running && !gotAnyFix) {
+            onError?.invoke(LocationError.TIMEOUT)
+        }
+    }
+
+    override fun start(onFix: (LocationFix) -> Unit, onError: (LocationError) -> Unit) {
+        if (running) return
+        val m = manager
+        if (m == null) {
+            onError(LocationError.UNKNOWN)
+            return
+        }
+        if (!hasPermission()) {
+            onError(LocationError.PERMISSION_DENIED)
+            return
+        }
+        if (!m.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            onError(LocationError.PROVIDER_DISABLED)
+            return
+        }
+
+        this.onFix = onFix
+        this.onError = onError
+        this.gotAnyFix = false
+        this.running = true
+
+        // 先给一个历史位置（如果有），让 UI 立刻有东西显示
+        runCatching { m.getLastKnownLocation(LocationManager.GPS_PROVIDER) }
+            .getOrNull()
+            ?.let { onFix(it.toFix()) }
+
+        requestUpdates(Tuning.Sampling.NORMAL_INTERVAL_MS)
+        handler.postDelayed(timeoutRunnable, TIMEOUT_MS)
+    }
+
+    override fun stop() {
+        running = false
+        onFix = null
+        onError = null
+        handler.removeCallbacks(timeoutRunnable)
+        runCatching { manager?.removeUpdates(listener) }
+    }
+
+    private fun adaptInterval(location: Location) {
+        val speed = if (location.hasSpeed()) location.speed else null
+        val want = intervalFor(speed)
+        if (want != currentIntervalMs) requestUpdates(want)
+    }
+
+    private fun intervalFor(speedMps: Float?): Long = when {
+        speedMps == null -> Tuning.Sampling.NORMAL_INTERVAL_MS
+        speedMps >= Tuning.Sampling.FAST_SPEED_MPS -> Tuning.Sampling.FAST_INTERVAL_MS
+        speedMps >= Tuning.Sampling.WALK_SPEED_MPS -> Tuning.Sampling.NORMAL_INTERVAL_MS
+        else -> Tuning.Sampling.SLOW_INTERVAL_MS
+    }
+
+    private fun requestUpdates(intervalMs: Long) {
+        val m = manager ?: return
+        if (!hasPermission()) return
+        currentIntervalMs = intervalMs
+        runCatching {
+            m.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                intervalMs,
+                0f,
+                listener,
+                Looper.getMainLooper(),
+            )
+        }
+    }
+
+    private fun hasPermission(): Boolean =
+        ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+
+    private fun Location.toFix(): LocationFix = LocationFix(
+        point = Wgs84(latitude, longitude),
+        timeMillis = time,
+        accuracyMeters = if (hasAccuracy()) accuracy else -1f,
+        speedMps = if (hasSpeed()) speed else null,
+        bearingDeg = if (hasBearing()) bearing else null,
+        altitudeM = if (hasAltitude()) altitude else null,
+        source = PointSource.GNSS,
+    )
+
+    companion object {
+        /** 超过这个时间还没有第一个点，就报 TIMEOUT */
+        const val TIMEOUT_MS = 30_000L
+    }
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/location/LocationSource.kt -->
+
+```kotlin
+package com.llyytt.path.location
+
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.data.db.PointSource
+
+/** 定位失败原因。冷启动实测出问题时，靠它区分「没信号」还是「provider 没开」。 */
+enum class LocationError {
+    /** 没给定位权限 */
+    PERMISSION_DENIED,
+
+    /** 系统定位开关关了，或 GPS provider 被禁用 */
+    PROVIDER_DISABLED,
+
+    /** 已经开始采样但迟迟拿不到点（默认 30 秒） */
+    TIMEOUT,
+
+    UNKNOWN,
+}
+
+/**
+ * 一次定位结果。坐标永远是 WGS84。
+ *
+ * 将来接入高德定位 SDK（输出 GCJ-02）时，必须在那个实现内部做
+ * GCJ-02 -> WGS84 逆变换，并把 source 标成 AMAP_LOCATION。
+ */
+data class LocationFix(
+    val point: Wgs84,
+    val timeMillis: Long,
+    val accuracyMeters: Float,
+    val speedMps: Float?,
+    val bearingDeg: Float?,
+    val altitudeM: Double?,
+    val source: PointSource = PointSource.GNSS,
+)
+
+/**
+ * 定位来源抽象，和 MapEngine 平级。
+ *
+ * 用回调而不是 Flow：这个接口的生命周期由前台服务持有，
+ * 用 Flow 就要么每次 collect 重复注册监听、要么自己持 CoroutineScope 并负责取消。
+ * 回调与系统的 requestLocationUpdates 一一对应，start/stop 显式可控。
+ * UI 需要 Flow 时在服务层用 callbackFlow 包一层。
+ */
+interface LocationSource {
+
+    val isRunning: Boolean
+
+    fun start(onFix: (LocationFix) -> Unit, onError: (LocationError) -> Unit)
+
+    fun stop()
+}
+```
+
+<!-- FILE: app/src/main/java/com/llyytt/path/mapimpl/amap/AMapEngine.kt -->
+
+```kotlin
+package com.llyytt.path.mapimpl.amap
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.os.Bundle
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import com.amap.api.maps.AMap
+import com.amap.api.maps.CameraUpdateFactory
+import com.amap.api.maps.CoordinateConverter
+import com.amap.api.maps.MapView as AMapMapView
+import com.amap.api.maps.MapsInitializer
+import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.LatLngBounds
+import com.amap.api.maps.model.MarkerOptions
+import com.amap.api.maps.model.PolylineOptions
+import com.llyytt.path.core.geo.PolylineHitTest
+import com.llyytt.path.core.geo.ScreenPoint
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.core.geo.Wgs84Bounds
+import com.llyytt.path.map.MapController
+import com.llyytt.path.map.MapEngine
+import com.llyytt.path.map.MapPolyline
+import com.llyytt.path.map.MapScene
+import com.llyytt.path.map.OfflineCapability
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+
+/**
+ * 高德 3D 地图实现。整个 App 里唯一 import com.amap 的地方。
+ *
+ * 坐标职责：业务层给的永远是 Wgs84；进这里之后由本类转成 GCJ-02 再交给 SDK。
+ * 转出去的方向只有“出”：SDK 的 LatLng 绝不回流成 Wgs84 进业务层。
+ */
+class AMapEngine(private val appContext: Context) : MapEngine {
+
+    override val id: String = "amap"
+
+    override val offlineCapability: OfflineCapability = OfflineCapability.CACHE_ONLY
+
+    override fun createController(): MapController = AMapController(appContext)
+
+    @Composable
+    override fun MapView(controller: MapController, modifier: Modifier) {
+        val c = controller as AMapController
+        val density = LocalDensity.current.density
+        // 用 LocalContext 反查 LifecycleOwner，避免依赖 lifecycle-runtime-compose 这个额外库
+        val lifecycleOwner = LocalContext.current as? LifecycleOwner
+
+        AndroidView(
+            modifier = modifier,
+            factory = { ctx ->
+                AMapMapView(ctx).apply {
+                    onCreate(Bundle())
+                    onResume()
+                    c.attach(this, density)
+                }
+            },
+            onRelease = { view ->
+                c.detach()
+                view.onDestroy()
+            },
+        )
+
+        if (lifecycleOwner != null) {
+            DisposableEffect(lifecycleOwner, c) {
+                val observer = LifecycleEventObserver { _, event ->
+                    when (event) {
+                        Lifecycle.Event.ON_RESUME -> c.resumeMap()
+                        Lifecycle.Event.ON_PAUSE -> c.pauseMap()
+                        else -> Unit
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+        }
+    }
+
+    companion object {
+        @Volatile
+        private var sdkReady = false
+
+        /**
+         * 高德强制要求的隐私合规声明，必须在任何 MapView 创建之前调用一次。
+         * 忘了调 → 地图白屏，这是排查白屏的第一嫌疑。
+         *
+         * TODO(第 3 步)：改成用户点「同意」之后再调，不在 Application.onCreate 里直接同意。
+         */
+        fun initSdk(context: Context) {
+            if (sdkReady) return
+            synchronized(AMapEngine::class.java) {
+                if (sdkReady) return
+                MapsInitializer.updatePrivacyShow(context, true, true)
+                MapsInitializer.updatePrivacyAgree(context, true)
+                sdkReady = true
+            }
+        }
+    }
+}
+
+internal class AMapController(private val appContext: Context) : MapController {
+
+    private var mapView: AMapMapView? = null
+    private var aMap: AMap? = null
+    private var density: Float = 1f
+
+    private var pendingScene: MapScene? = null
+    private var pendingPoint: Pair<Wgs84, Float?>? = null
+    private var pendingBounds: Pair<Wgs84Bounds, Int>? = null
+    private var clickListener: ((String) -> Unit)? = null
+
+    /** SDK 的 polylineId -> 我们的 MapPolyline.id */
+    private val ourIdBySdkId = mutableMapOf<String, String>()
+
+    /** SDK 的 polylineId -> 折线对象，命中判定要用它的屏幕坐标 */
+    private val polylinesBySdkId = mutableMapOf<String, com.amap.api.maps.model.Polyline>()
+
+    private val markers = mutableListOf<com.amap.api.maps.model.Marker>()
+    private var cursorMarker: com.amap.api.maps.model.Marker? = null
+
+    private var pendingTrack: List<MapPolyline>? = null
+    private var pendingCursor: Wgs84? = null
+
+    private val converter: CoordinateConverter by lazy { CoordinateConverter(appContext) }
+
+    fun attach(view: AMapMapView, density: Float) {
+        this.mapView = view
+        this.density = density
+        val map = view.map
+        this.aMap = map
+
+        map.setOnPolylineClickListener { polyline ->
+            val sdkId = polyline?.id ?: return@setOnPolylineClickListener
+            ourIdBySdkId[sdkId]?.let { clickListener?.invoke(it) }
+        }
+
+        // 高德 11.x 的 PolylineOptions 没有 clickable 参数，SDK 自带的折线点击不触发，
+        // 所以用「地图点击 + 屏幕像素距离」自己做命中判定（阈值 48px ≈ 16dp）。
+        map.setOnMapClickListener { latLng ->
+            val sdkId = hitTest(latLng)
+            if (sdkId != null) ourIdBySdkId[sdkId]?.let { clickListener?.invoke(it) }
+        }
+
+        pendingScene?.let { render(it) }
+        pendingTrack?.let { renderTrack(it) }
+        pendingCursor?.let { renderCursor(it) }
+        pendingPoint?.let { (p, zoom) -> moveCameraTo(p, zoom) }
+        pendingBounds?.let { (b, pad) -> fitBounds(b, pad) }
+        pendingScene = null
+        pendingTrack = null
+        pendingCursor = null
+        pendingPoint = null
+        pendingBounds = null
+    }
+
+    fun detach() {
+        aMap = null
+        mapView = null
+        ourIdBySdkId.clear()
+        polylinesBySdkId.clear()
+        markers.clear()
+        cursorMarker = null
+    }
+
+    fun resumeMap() {
+        mapView?.onResume()
+    }
+
+    fun pauseMap() {
+        mapView?.onPause()
+    }
+
+    /** 全量：轨迹 + 标记。演示页用。 */
+    override fun render(scene: MapScene) {
+        val map = aMap ?: run {
+            pendingScene = scene
+            return
+        }
+        map.clear()
+        markers.clear()
+        for (marker in scene.markers) {
+            markers.add(
+                map.addMarker(
+                    MarkerOptions()
+                        .position(toGcj(marker.position))
+                        .title(marker.label),
+                ),
+            )
+        }
+        renderTrackInternal(scene.polylines)
+    }
+
+    /** 只重画轨迹：逐条 remove，不做 map.clear()，这样回放光标不会被带走。 */
+    override fun renderTrack(polylines: List<MapPolyline>) {
+        if (aMap == null) {
+            pendingTrack = polylines
+            return
+        }
+        renderTrackInternal(polylines)
+    }
+
+    private fun renderTrackInternal(polylines: List<MapPolyline>) {
+        val map = aMap ?: return
+        polylinesBySdkId.values.forEach { runCatching { it.remove() } }
+        polylinesBySdkId.clear()
+        ourIdBySdkId.clear()
+
+        for (line in polylines) {
+            if (line.points.size < 2) continue
+            val options = PolylineOptions()
+                .addAll(line.points.map { toGcj(it) })
+                .color(line.colorArgb)
+                .width(line.widthDp * density)
+            val polyline = map.addPolyline(options)
+            ourIdBySdkId[polyline.id] = line.id
+            polylinesBySdkId[polyline.id] = polyline
+        }
+    }
+
+    /** 只移动光标标记。 */
+    override fun renderCursor(point: Wgs84?) {
+        val map = aMap ?: run {
+            pendingCursor = point
+            return
+        }
+        cursorMarker?.let { runCatching { it.remove() } }
+        cursorMarker = null
+        if (point != null) {
+            cursorMarker = map.addMarker(
+                MarkerOptions()
+                    .position(toGcj(point))
+                    .title(null),
+            )
+        }
+    }
+
+    override fun moveCameraTo(point: Wgs84, zoom: Float?) {
+        val map = aMap ?: run {
+            pendingPoint = point to zoom
+            return
+        }
+        val target = toGcj(point)
+        val update = if (zoom != null) {
+            CameraUpdateFactory.newLatLngZoom(target, zoom)
+        } else {
+            CameraUpdateFactory.newLatLng(target)
+        }
+        map.animateCamera(update)
+    }
+
+    override fun fitBounds(bounds: Wgs84Bounds, paddingDp: Int) {
+        val map = aMap ?: run {
+            pendingBounds = bounds to paddingDp
+            return
+        }
+        val builder = LatLngBounds.Builder()
+        builder.include(toGcj(Wgs84(bounds.south, bounds.west)))
+        builder.include(toGcj(Wgs84(bounds.south, bounds.east)))
+        builder.include(toGcj(Wgs84(bounds.north, bounds.west)))
+        builder.include(toGcj(Wgs84(bounds.north, bounds.east)))
+
+        val paddingPx = (paddingDp * density).toInt()
+        runCatching {
+            map.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), paddingPx))
+        }
+    }
+
+    override suspend fun snapshot(): Bitmap? = suspendCancellableCoroutine { cont ->
+        val map = aMap
+        if (map == null) {
+            cont.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        var resumed = false
+        map.getMapScreenShot(object : AMap.OnMapScreenShotListener {
+            override fun onMapScreenShot(bitmap: Bitmap?) {
+                if (!resumed) {
+                    resumed = true
+                    if (cont.isActive) cont.resume(bitmap)
+                }
+            }
+
+            override fun onMapScreenShot(bitmap: Bitmap?, status: Int) {
+                if (!resumed) {
+                    resumed = true
+                    if (cont.isActive) cont.resume(bitmap)
+                }
+            }
+        })
+    }
+
+    override fun setOnPolylineClickListener(listener: (String) -> Unit) {
+        clickListener = listener
+    }
+
+    /** WGS84 -> GCJ-02。这是本类唯一的坐标职责，业务层永远看不到 GCJ-02。 */
+    private fun toGcj(point: Wgs84): LatLng {
+        return converter
+            .from(CoordinateConverter.CoordType.GPS)
+            .coord(LatLng(point.lat, point.lng))
+            .convert()
+    }
+
+    /**
+     * 折线命中判定：把点击点和折线顶点都投影成屏幕像素，
+     * 交给 core/geo 的 PolylineHitTest 算「点到线段」的最短距离。
+     * 阈值 48px（520dpi ≈ 14dp），手指按在线附近就能选中。
+     */
+    private fun hitTest(clicked: LatLng): String? {
+        val map = aMap ?: return null
+        val projection = map.projection ?: return null
+
+        val clickPx = projection.toScreenLocation(clicked)
+        val clickPoint = ScreenPoint(clickPx.x.toFloat(), clickPx.y.toFloat())
+
+        val ids = polylinesBySdkId.keys.toList()
+        if (ids.isEmpty()) return null
+
+        val screenPolylines = ids.map { id ->
+            polylinesBySdkId.getValue(id).points.map { p ->
+                val px = projection.toScreenLocation(p)
+                ScreenPoint(px.x.toFloat(), px.y.toFloat())
+            }
+        }
+
+        val hitIndex = PolylineHitTest.nearestPolyline(clickPoint, screenPolylines)
+        return if (hitIndex >= 0) ids[hitIndex] else null
+    }}
+```
+
+
+### 单元测试
+
+<!-- FILE: app/src/test/java/com/llyytt/path/core/export/TrackExporterTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.export
+
+import com.llyytt.path.data.db.TransportMode
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class TrackExporterTest {
+
+    private fun sample(): TripDetailForExport = TripDetailForExport(
+        title = "测试行程",
+        startedAt = 1_700_000_000_000L,
+        exportedAt = 1_700_000_100_000L,
+        points = listOf(
+            ExportPoint(0, 39.900000, 116.400000, 1_700_000_000_000L),
+            ExportPoint(1, 39.900100, 116.400100, 1_700_000_002_000L),
+            ExportPoint(2, 39.900200, 116.400200, 1_700_000_004_000L),
+            ExportPoint(3, 39.900300, 116.400300, 1_700_000_006_000L),
+        ),
+        segments = listOf(
+            ExportSegment(0, 1, TransportMode.WALK),
+            ExportSegment(2, 3, TransportMode.BIKE),
+        ),
+        stays = listOf(ExportStay(39.900050, 116.400050, 1_700_000_001_000L, 1_700_000_002_000L)),
+    )
+
+    @Test
+    fun `gpx 是 1_1 且声明了命名空间`() {
+        val gpx = TrackExporter.toGpx(sample())
+        assertTrue(gpx.startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
+        assertTrue(gpx.contains("version=\"1.1\""))
+        assertTrue(gpx.contains("http://www.topografix.com/GPX/1/1"))
+    }
+
+    @Test
+    fun `gpx 每段一个 trk 且方式写进 type`() {
+        val gpx = TrackExporter.toGpx(sample())
+        assertEquals(2, Regex("<trk>").findAll(gpx).count())
+        assertTrue(gpx.contains("<type>walking</type>"))
+        assertTrue(gpx.contains("<type>cycling</type>"))
+    }
+
+    @Test
+    fun `gpx 坐标是 WGS84 原值 6 位小数`() {
+        val gpx = TrackExporter.toGpx(sample())
+        assertTrue(gpx.contains("lat=\"39.900000\" lon=\"116.400000\""))
+        assertTrue(gpx.contains("lat=\"39.900300\" lon=\"116.400300\""))
+    }
+
+    @Test
+    fun `gpx 时间是 iso8601 utc`() {
+        val gpx = TrackExporter.toGpx(sample())
+        assertTrue(gpx.contains("<time>2023-11-14T22:13:20Z</time>"))
+    }
+
+    @Test
+    fun `gpx 停留点包含时长`() {
+        val gpx = TrackExporter.toGpx(sample())
+        assertTrue(gpx.contains("<wpt lat=\"39.900050\" lon=\"116.400050\">"))
+        assertTrue(gpx.contains("停留 1 秒"))
+    }
+
+    @Test
+    fun `kml 是 2_2 且坐标顺序是经度在前`() {
+        val kml = TrackExporter.toKml(sample())
+        assertTrue(kml.contains("<kml xmlns=\"http://www.opengis.net/kml/2.2\">"))
+        // 经度 116.4 必须在纬度 39.9 前面
+        assertTrue(kml.contains("116.400000,39.900000,0"))
+        assertFalse(kml.contains("39.900000,116.400000,0"))
+    }
+
+    @Test
+    fun `kml 每段一个 LineString 并带样式`() {
+        val kml = TrackExporter.toKml(sample())
+        assertEquals(2, Regex("<LineString>").findAll(kml).count())
+        assertTrue(kml.contains("id=\"seg_1_walk\""))
+        assertTrue(kml.contains("id=\"seg_2_bike\""))
+        assertTrue(kml.contains("styleUrl>#seg_1_walk<"))
+        assertTrue(kml.contains("styleUrl>#seg_2_bike<"))
+    }
+
+    @Test
+    fun `kml 样式 id 唯一 即使两段同方式`() {
+        val sameMode = sample().copy(
+            segments = listOf(
+                ExportSegment(0, 1, TransportMode.BIKE),
+                ExportSegment(2, 3, TransportMode.BIKE),
+            ),
+        )
+        val kml = TrackExporter.toKml(sameMode)
+        val ids = Regex("id=\"(seg_[^\"]+)\"").findAll(kml).map { it.groupValues[1] }.toList()
+        assertEquals("两段同方式也必须有两个不同 id", 2, ids.size)
+        assertEquals(ids.toSet().size, ids.size)
+        assertEquals(listOf("seg_1_bike", "seg_2_bike"), ids)
+    }
+
+    @Test
+    fun `xml 特殊字符被转义`() {
+        val detail = sample().copy(title = "a<b>c&d\"e")
+        assertTrue(TrackExporter.toGpx(detail).contains("a&lt;b&gt;c&amp;d&quot;e"))
+        assertTrue(TrackExporter.toKml(detail).contains("a&lt;b&gt;c&amp;d&quot;e"))
+    }
+
+    @Test
+    fun `导出内容里没有密钥类字样`() {
+        val findings = TrackExporter.scanForSensitiveContent(
+            TrackExporter.toGpx(sample()) + TrackExporter.toKml(sample()),
+        )
+        assertTrue("不应命中：$findings", findings.isEmpty())
+    }
+
+    @Test
+    fun `扫描能抓到 sk 前缀和 Authorization`() {
+        assertTrue(TrackExporter.scanForSensitiveContent("key=sk-abc123").isNotEmpty())
+        assertTrue(TrackExporter.scanForSensitiveContent("Authorization: Bearer x").isNotEmpty())
+    }
+
+    @Test
+    fun `坐标格式化不受地区影响`() {
+        assertEquals("39.900000", TrackExporter.coord(39.9))
+        assertEquals("-0.000001", TrackExporter.coord(-0.000001))
+    }
+
+    @Test
+    fun `iso8601 去掉毫秒并带 Z`() {
+        assertEquals("2023-11-14T22:13:20Z", TrackExporter.iso8601(1_700_000_000_123L))
+    }
+}
+```
+
+<!-- FILE: app/src/test/java/com/llyytt/path/core/geo/PolylineHitTestTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.geo
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * PolylineHitTest 的单元测试。
+ *
+ * 这段几何逻辑在真机上错过两次（先用 SDK 回调失效，后只算顶点距离导致边中点选不中），
+ * 所以用纯 JVM 测试锁死，避免第 4/5 步再踩。
+ */
+class PolylineHitTestTest {
+
+    @Test
+    fun 垂直距离等于线段到点的垂距() {
+        val d = PolylineHitTest.distanceToSegment(
+            p = ScreenPoint(5f, 5f),
+            a = ScreenPoint(0f, 0f),
+            b = ScreenPoint(10f, 0f),
+        )
+        assertEquals(5f, d, 0.001f)
+    }
+
+    @Test
+    fun 点落在端点上时距离为零() {
+        val d = PolylineHitTest.distanceToSegment(
+            p = ScreenPoint(10f, 0f),
+            a = ScreenPoint(0f, 0f),
+            b = ScreenPoint(10f, 0f),
+        )
+        assertEquals(0f, d, 0.001f)
+    }
+
+    @Test
+    fun 超出线段两端时退化为端点距离() {
+        val d = PolylineHitTest.distanceToSegment(
+            p = ScreenPoint(20f, 0f),
+            a = ScreenPoint(0f, 0f),
+            b = ScreenPoint(10f, 0f),
+        )
+        assertEquals(10f, d, 0.001f)
+    }
+
+    @Test
+    fun 退化线段不会除零() {
+        val d = PolylineHitTest.distanceToSegment(
+            p = ScreenPoint(3f, 4f),
+            a = ScreenPoint(0f, 0f),
+            b = ScreenPoint(0f, 0f),
+        )
+        assertEquals(5f, d, 0.001f)
+    }
+
+    @Test
+    fun 点在边中点也能命中折线() {
+        // 这正是第 2 步真机上的失败场景：点在边的中间，不是顶点。
+        // 取边 (0,0)-(100,100) 的中点 (50,50) 附近，偏 2px。
+        val polyline = listOf(
+            ScreenPoint(0f, 0f),
+            ScreenPoint(100f, 100f),
+            ScreenPoint(200f, 0f),
+        )
+        val d = PolylineHitTest.distanceToPolyline(ScreenPoint(50f, 52f), polyline)
+        assertTrue("边中点应判定为在线附近，实际距离 $d", d < 5f)
+        assertTrue("且必须落在默认阈值内", d < PolylineHitTest.DEFAULT_TOLERANCE_PX)
+    }
+
+    @Test
+    fun V形折线开口外的点不应命中() {
+        // 同样一条 V 形，取开口下方（顶点正下方）的点，它离两段边都很远
+        val polyline = listOf(
+            ScreenPoint(0f, 0f),
+            ScreenPoint(100f, 100f),
+            ScreenPoint(200f, 0f),
+        )
+        val d = PolylineHitTest.distanceToPolyline(ScreenPoint(100f, 2f), polyline)
+        assertTrue("开口外的点不该算命中，实际距离 $d", d > PolylineHitTest.DEFAULT_TOLERANCE_PX)
+    }
+
+    @Test
+    fun 在多条折线里选中最近的那条() {
+        val a = listOf(ScreenPoint(0f, 0f), ScreenPoint(100f, 0f))
+        val b = listOf(ScreenPoint(0f, 300f), ScreenPoint(100f, 300f))
+        val hit = PolylineHitTest.nearestPolyline(ScreenPoint(50f, 310f), listOf(a, b))
+        assertEquals(1, hit)
+    }
+
+    @Test
+    fun 离所有折线都远时返回负一() {
+        val a = listOf(ScreenPoint(0f, 0f), ScreenPoint(100f, 0f))
+        val hit = PolylineHitTest.nearestPolyline(ScreenPoint(50f, 500f), listOf(a))
+        assertEquals(-1, hit)
+    }
+}
+```
+
+<!-- FILE: app/src/test/java/com/llyytt/path/core/geo/PolylineSimplifierTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.geo
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class PolylineSimplifierTest {
+
+    private fun p(lat: Double, lng: Double) = Wgs84(lat, lng)
+
+    @Test
+    fun 直线上的中间点会被全部去掉() {
+        // 一条向北的直线，10 个点共线
+        val line = (0..9).map { p(39.9 + it * 0.0001, 116.4) }
+        val out = PolylineSimplifier.simplify(line, 2.0)
+        assertEquals(2, out.size)
+        assertEquals(line.first(), out.first())
+        assertEquals(line.last(), out.last())
+    }
+
+    @Test
+    fun 拐点会被保留() {
+        // 先向北 100m，再向东 100m
+        val pts = listOf(
+            p(39.9000, 116.4000),
+            p(39.9009, 116.4000), // 拐点
+            p(39.9009, 116.4012),
+        )
+        val out = PolylineSimplifier.simplify(pts, 2.0)
+        assertEquals(3, out.size)
+    }
+
+    @Test
+    fun 轻微抖动会被抹平() {
+        // 直线 + 1m 抖动，容差 2m 应该全去掉
+        val pts = listOf(
+            p(39.9000, 116.4000),
+            p(39.9002, 116.400009),
+            p(39.9004, 116.4000),
+            p(39.9006, 116.4000),
+        )
+        val out = PolylineSimplifier.simplify(pts, 2.0)
+        assertEquals(2, out.size)
+    }
+
+    @Test
+    fun 少于三个点原样返回() {
+        val pts = listOf(p(39.9, 116.4))
+        assertEquals(pts, PolylineSimplifier.simplify(pts))
+        val two = listOf(p(39.9, 116.4), p(39.91, 116.41))
+        assertEquals(two, PolylineSimplifier.simplify(two))
+    }
+
+    @Test
+    fun 垂距计算符合几何直觉() {
+        // 赤道附近，1e-4 度约 11.13m
+        val a = p(0.0, 0.0)
+        val b = p(0.0, 0.001)
+        val mid = p(0.0001, 0.0005)
+        val d = PolylineSimplifier.perpendicularDistanceMeters(mid, a, b)
+        assertEquals(11.05, d, 0.5)
+    }
+
+    @Test
+    fun 抽稀后首尾点必须保留() {
+        val pts = (0..50).map { p(39.9 + it * 0.00005, 116.4 + it * 0.00007) }
+        val out = PolylineSimplifier.simplify(pts, 5.0)
+        assertEquals(pts.first(), out.first())
+        assertEquals(pts.last(), out.last())
+        assertTrue("抽稀后点数应少于原始", out.size < pts.size)
+    }
+}
+```
+
+<!-- FILE: app/src/test/java/com/llyytt/path/core/rules/DurationCalcTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.data.db.TripStatus
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class DurationCalcTest {
+
+    private val t0 = 1_000_000L
+
+    @Test
+    fun 进行中_没有暂停时等于墙上时间() {
+        val got = DurationCalc.activeMillis(
+            startedAt = t0,
+            endedAt = null,
+            status = TripStatus.RECORDING,
+            pauses = emptyList(),
+            now = t0 + 60_000,
+        )
+        assertEquals(60_000L, got)
+    }
+
+    @Test
+    fun 进行中_扣掉已闭合的暂停() {
+        // 走了 60s，中间暂停 10s
+        val got = DurationCalc.activeMillis(
+            startedAt = t0,
+            endedAt = null,
+            status = TripStatus.RECORDING,
+            pauses = listOf(t0 + 20_000 to t0 + 30_000),
+            now = t0 + 60_000,
+        )
+        assertEquals(50_000L, got)
+    }
+
+    @Test
+    fun 暂停中_未闭合的暂停用now扣() {
+        // 走了 20s 后暂停，现在暂停了 30s
+        val got = DurationCalc.activeMillis(
+            startedAt = t0,
+            endedAt = null,
+            status = TripStatus.PAUSED,
+            pauses = listOf(t0 + 20_000 to null),
+            now = t0 + 50_000,
+        )
+        assertEquals(20_000L, got)
+    }
+
+    @Test
+    fun 已结束_用endedAt而不是now() {
+        val got = DurationCalc.activeMillis(
+            startedAt = t0,
+            endedAt = t0 + 100_000,
+            status = TripStatus.FINISHED,
+            pauses = listOf(t0 + 40_000 to t0 + 50_000),
+            now = t0 + 9_999_999, // now 再大也不该影响结果
+        )
+        assertEquals(90_000L, got)
+    }
+
+    @Test
+    fun 多次暂停全部扣除() {
+        val got = DurationCalc.activeMillis(
+            startedAt = t0,
+            endedAt = t0 + 100_000,
+            status = TripStatus.FINISHED,
+            pauses = listOf(
+                t0 + 10_000 to t0 + 20_000,
+                t0 + 50_000 to t0 + 55_000,
+            ),
+            now = t0 + 100_000,
+        )
+        assertEquals(85_000L, got)
+    }
+
+    @Test
+    fun 脏数据不会算出负数() {
+        val got = DurationCalc.activeMillis(
+            startedAt = t0,
+            endedAt = t0 + 10_000,
+            status = TripStatus.FINISHED,
+            pauses = listOf(t0 - 5_000 to t0 + 60_000),
+            now = t0 + 10_000,
+        )
+        assertEquals(0L, got)
+    }
+}
+```
+
+<!-- FILE: app/src/test/java/com/llyytt/path/core/rules/SegmenterTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.data.db.PointSource
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TransportMode
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import kotlin.math.cos
+
+/**
+ * 合成轨迹：走 2 分钟 → 停 30 秒 → 快走 1 分钟 → 骑车 2 分钟。
+ * 每 2 秒一个点，速度由构造直接给出（不依赖真实 GPS）。
+ */
+class SegmenterTest {
+
+    private fun buildTrack(): List<TrackPointEntity> {
+        val out = ArrayList<TrackPointEntity>()
+        var time = 0L
+        var lng = 116.40
+        var seq = 0
+        val metersPerDegLng = 111_320.0 * cos(Math.toRadians(39.9))
+
+        fun advance(seconds: Int, speedMps: Double) {
+            repeat(seconds / 2) {
+                time += 2_000
+                lng += speedMps * 2.0 / metersPerDegLng
+                out.add(
+                    TrackPointEntity(
+                        id = seq.toLong(),
+                        tripId = 1,
+                        seq = seq,
+                        lat = 39.9,
+                        lng = lng,
+                        speedMps = speedMps.toFloat(),
+                        accuracyM = 5f,
+                        recordedAt = time,
+                        source = PointSource.GNSS,
+                    ),
+                )
+                seq++
+            }
+        }
+
+        advance(120, 1.3)  // 走路
+        advance(30, 0.0)   // 停
+        advance(60, 2.0)   // 快走
+        advance(120, 5.5)  // 骑车
+        return out
+    }
+
+    @Test
+    fun 合成轨迹切出三段一个停留() {
+        val points = buildTrack()
+        val result = Segmenter.run(points)
+
+        printReport(points, result)
+
+        assertEquals("应识别出 1 个停留", 1, result.stays.size)
+        assertEquals("应切出 3 段", 3, result.segments.size)
+
+        assertEquals(TransportMode.WALK, result.segments[0].mode)
+        assertEquals(TransportMode.WALK, result.segments[1].mode)
+        assertEquals(TransportMode.BIKE, result.segments[2].mode)
+
+        // 覆盖：第一段从 0 开始，最后一段到末尾
+        assertEquals(0, result.segments.first().startSeq)
+        assertEquals(points.last().seq, result.segments.last().endSeq)
+
+        // 分段严格递增不重叠；停留落在两段之间
+        for (i in 1 until result.segments.size) {
+            assertTrue(result.segments[i].startSeq > result.segments[i - 1].endSeq)
+        }
+        val stay = result.stays.first()
+        assertTrue(stay.startSeq > result.segments[0].endSeq)
+        assertTrue(stay.endSeq < result.segments[1].startSeq)
+    }
+
+    @Test
+    fun 合成轨迹通过校验() {
+        val points = buildTrack()
+        val result = Segmenter.run(points)
+        val violations = TripInvariants.validateSegments(points, result.segments, result.stays)
+        assertEquals("不应有任何违规：$violations", 0, violations.size)
+    }
+
+    @Test
+    fun 十秒的短暂停顿不算停留() {
+        val points = ArrayList<TrackPointEntity>()
+        var time = 0L
+        var lng = 116.40
+        var seq = 0
+        val metersPerDegLng = 111_320.0 * cos(Math.toRadians(39.9))
+
+        fun advance(seconds: Int, speedMps: Double) {
+            repeat(seconds / 2) {
+                time += 2_000
+                lng += speedMps * 2.0 / metersPerDegLng
+                points.add(
+                    TrackPointEntity(
+                        id = seq.toLong(), tripId = 1, seq = seq, lat = 39.9, lng = lng,
+                        speedMps = speedMps.toFloat(), accuracyM = 5f, recordedAt = time,
+                        source = PointSource.GNSS,
+                    ),
+                )
+                seq++
+            }
+        }
+
+        advance(60, 1.3)
+        advance(10, 0.0)   // 只有 10 秒
+        advance(60, 1.3)
+
+        val result = Segmenter.run(points)
+        assertEquals("10 秒停顿不该算停留", 0, result.stays.size)
+        assertEquals("应合成一整段", 1, result.segments.size)
+    }
+
+    @Test
+    fun 断点处不会把两段合成一段() {
+        val points = buildTrack().toMutableList()
+        // 断点放在骑车段的正中间（seq 130 左右），切出来的两半都足够长，不会被合并掉
+        points[130] = points[130].copy(startsNewSegment = true)
+
+        val result = Segmenter.run(points)
+        assertEquals(TransportMode.BIKE, result.segments.last().mode)
+        assertEquals("断点应切出额外一段", 4, result.segments.size)
+        assertTrue(result.segments[2].endSeq < result.segments[3].startSeq)
+
+        val violations = TripInvariants.validateSegments(points, result.segments, result.stays)
+        assertEquals("断点不应导致校验失败：$violations", 0, violations.size)
+    }
+
+    @Test
+    fun 点数太少直接返回空() {
+        assertEquals(0, Segmenter.run(emptyList()).segments.size)
+        val one = buildTrack().take(1)
+        assertEquals(0, Segmenter.run(one).segments.size)
+    }
+
+    private fun printReport(points: List<TrackPointEntity>, result: SegmentationResult) {
+        val totalSeconds = (points.last().recordedAt - points.first().recordedAt) / 1000.0
+        println("=== 合成轨迹：走 2 分钟 → 停 30 秒 → 快走 1 分钟 → 骑车 2 分钟 ===")
+        println("点位数=${points.size}  总时长=${totalSeconds}s")
+
+        println("停留 ${result.stays.size} 个：")
+        result.stays.forEach { stay ->
+            val seconds = (stay.leaveAt - stay.arriveAt) / 1000.0
+            println("  seq ${stay.startSeq}..${stay.endSeq}  ${seconds}s  半径 ${"%.1f".format(stay.radiusMeters)}m")
+        }
+
+        println("分段 ${result.segments.size} 段：")
+        result.segments.forEachIndexed { index, seg ->
+            val startTime = points.first { it.seq == seg.startSeq }.recordedAt
+            val endTime = points.first { it.seq == seg.endSeq }.recordedAt
+            val seconds = (endTime - startTime) / 1000.0
+            var meters = 0.0
+            for (k in seg.startSeq until seg.endSeq) {
+                val a = points[k]
+                val b = points[k + 1]
+                meters += com.llyytt.path.core.geo.Wgs84(a.lat, a.lng)
+                    .distanceTo(com.llyytt.path.core.geo.Wgs84(b.lat, b.lng))
+            }
+            println(
+                "  [${index + 1}] ${seg.mode}  seq ${seg.startSeq}..${seg.endSeq}  " +
+                    "${seconds.toInt()}s  ${"%.0f".format(meters)}m",
+            )
+        }
+
+        val violations = TripInvariants.validateSegments(points, result.segments, result.stays)
+        println("校验：${if (violations.isEmpty()) "通过（0 条违规）" else violations.joinToString()}")
+    }
+}
+```
+
+<!-- FILE: app/src/test/java/com/llyytt/path/core/rules/SpeedDisplayTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.core.geo.Wgs84
+import com.llyytt.path.data.db.PointSource
+import com.llyytt.path.data.db.TrackPointEntity
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class SpeedDisplayTest {
+
+    // ---------- 中位数 ----------
+
+    @Test
+    fun 奇数个取中间值() {
+        assertEquals(2.0, SpeedSmoother.median(listOf(1.0, 2.0, 3.0)), 0.0001)
+    }
+
+    @Test
+    fun 偶数个取中间两个的平均() {
+        assertEquals(2.5, SpeedSmoother.median(listOf(1.0, 2.0, 3.0, 4.0)), 0.0001)
+    }
+
+    @Test
+    fun 空集合返回零() {
+        assertEquals(0.0, SpeedSmoother.median(emptyList()), 0.0001)
+    }
+
+    // ---------- 平滑 ----------
+
+    @Test
+    fun 单次跳点不会带偏显示() {
+        val smoother = SpeedSmoother(windowSize = 5)
+        var last = smoother.add(1.0, 0)
+        last = smoother.add(1.0, 1000)
+        last = smoother.add(1.0, 2000)
+        last = smoother.add(1.0, 3000)
+        last = smoother.add(40.0, 4000) // GPS 跳点
+        // 5 个样本的中位数仍然是 1.0
+        assertEquals(1.0, last.smoothedMps, 0.0001)
+    }
+
+    @Test
+    fun 窗口只保留最近几个样本() {
+        val smoother = SpeedSmoother(windowSize = 3)
+        smoother.add(10.0, 0)
+        smoother.add(10.0, 1000)
+        smoother.add(2.0, 2000)
+        val snap = smoother.add(2.0, 3000)
+        // 最近 3 个是 10, 2, 2 -> 中位数 2
+        assertEquals(2.0, snap.smoothedMps, 0.0001)
+    }
+
+    // ---------- 静止判定 ----------
+
+    @Test
+    fun 低于阈值但不满五秒不算静止() {
+        val smoother = SpeedSmoother()
+        smoother.add(0.1, 0)
+        smoother.add(0.1, 2000)
+        val snap = smoother.add(0.1, 4000)
+        assertFalse(snap.stationary)
+    }
+
+    @Test
+    fun 持续低于阈值超过五秒判定为静止() {
+        val smoother = SpeedSmoother()
+        smoother.add(0.1, 0)
+        smoother.add(0.1, 2000)
+        smoother.add(0.1, 4000)
+        val snap = smoother.add(0.1, 5000)
+        assertTrue(snap.stationary)
+    }
+
+    @Test
+    fun 速度回升后静止状态立即解除() {
+        // 非对称判定：中位数可能还是低的，但只要本次原始样本达到阈值就立即解除。
+        val smoother = SpeedSmoother()
+        smoother.add(0.1, 0)
+        smoother.add(0.1, 3000)
+        smoother.add(0.1, 6000) // 此时已静止
+        val moving = smoother.add(3.0, 7000)
+        assertFalse("走上来了就该立刻解除静止", moving.stationary)
+    }
+
+    @Test
+    fun 解除后需要重新累计五秒才会再次静止() {
+        val smoother = SpeedSmoother()
+        smoother.add(0.1, 0)
+        smoother.add(0.1, 6000) // 已静止
+        smoother.add(3.0, 7000) // 解除
+        val snap = smoother.add(0.1, 8000)
+        assertFalse("计时重置后 1 秒不算静止", snap.stationary)
+    }
+
+    @Test
+    fun 重置后窗口与静止计时都清空() {
+        val smoother = SpeedSmoother()
+        smoother.add(0.1, 0)
+        smoother.add(0.1, 6000)
+        smoother.reset()
+        val snap = smoother.add(0.1, 6500)
+        assertFalse("reset 后应重新计时", snap.stationary)
+    }
+
+    // ---------- 取数 ----------
+
+    @Test
+    fun 优先使用系统速度() {
+        val s = SpeedSampler.sample(
+            previousPoint = Wgs84(39.9, 116.4),
+            previousTimeMillis = 0,
+            currentPoint = Wgs84(39.9, 116.5),
+            currentTimeMillis = 10_000,
+            systemSpeedMps = 2.5f,
+            accuracyMeters = 5f,
+        )
+        assertEquals(2.5, s!!, 0.0001)
+    }
+
+    @Test
+    fun 系统没给速度时用距离除时间() {
+        // 赤道附近 0.001 度经度约 111.3m，10 秒 -> 约 11.1 m/s
+        val s = SpeedSampler.sample(
+            previousPoint = Wgs84(0.0, 0.0),
+            previousTimeMillis = 0,
+            currentPoint = Wgs84(0.0, 0.001),
+            currentTimeMillis = 10_000,
+            systemSpeedMps = null,
+            accuracyMeters = 5f,
+        )
+        assertEquals(11.1, s!!, 0.3)
+    }
+
+    @Test
+    fun 精度太差的点不参与速度计算() {
+        val s = SpeedSampler.sample(
+            previousPoint = Wgs84(0.0, 0.0),
+            previousTimeMillis = 0,
+            currentPoint = Wgs84(0.0, 0.001),
+            currentTimeMillis = 10_000,
+            systemSpeedMps = 5f,
+            accuracyMeters = Tuning.Filter.MAX_ACCURACY_M + 1f,
+        )
+        assertNull(s)
+    }
+
+    @Test
+    fun 没有上一点且系统没给速度时返回空() {
+        val s = SpeedSampler.sample(
+            previousPoint = null,
+            previousTimeMillis = null,
+            currentPoint = Wgs84(0.0, 0.001),
+            currentTimeMillis = 10_000,
+            systemSpeedMps = null,
+            accuracyMeters = 5f,
+        )
+        assertNull(s)
+    }
+
+    @Test
+    fun 时间差太小不算速度() {
+        val s = SpeedSampler.sample(
+            previousPoint = Wgs84(0.0, 0.0),
+            previousTimeMillis = 1000,
+            currentPoint = Wgs84(0.0, 0.001),
+            currentTimeMillis = 1100,
+            systemSpeedMps = null,
+            accuracyMeters = 5f,
+        )
+        assertNull(s)
+    }
+
+    // ---------- 离线序列（详情页回放用） ----------
+
+    @Test
+    fun 离线序列在中断处重新开窗() {
+        val points = listOf(
+            point(seq = 0, t = 0, speed = 2.0f, newSegment = true),
+            point(seq = 1, t = 1000, speed = 2.0f),
+            point(seq = 2, t = 2000, speed = 2.0f, newSegment = true),
+        )
+        val series = SpeedSeries.smoothed(points)
+        assertEquals(3, series.size)
+        assertEquals(2.0, series[0].smoothedMps!!, 0.0001)
+        assertEquals(2.0, series[1].smoothedMps!!, 0.0001)
+        // 中断后重新开窗，仍按自己的样本算
+        assertEquals(2.0, series[2].smoothedMps!!, 0.0001)
+    }
+
+    @Test
+    fun 离线序列里精度差的点输出空() {
+        val points = listOf(
+            point(seq = 0, t = 0, speed = 2.0f, newSegment = true, accuracy = 5f),
+            point(seq = 1, t = 1000, speed = 2.0f, accuracy = 500f),
+        )
+        val series = SpeedSeries.smoothed(points)
+        assertNull(series[1].smoothedMps)
+    }
+
+    private fun point(
+        seq: Int,
+        t: Long,
+        speed: Float?,
+        newSegment: Boolean = false,
+        accuracy: Float = 5f,
+    ) = TrackPointEntity(
+        id = seq.toLong(),
+        tripId = 1,
+        seq = seq,
+        lat = 39.9 + seq * 0.0001,
+        lng = 116.4,
+        speedMps = speed,
+        accuracyM = accuracy,
+        recordedAt = t,
+        source = PointSource.GNSS,
+        startsNewSegment = newSegment,
+    )
+}
+```
+
+<!-- FILE: app/src/test/java/com/llyytt/path/core/rules/TripInvariantsTest.kt -->
+
+```kotlin
+package com.llyytt.path.core.rules
+
+import com.llyytt.path.data.db.PointSource
+import com.llyytt.path.data.db.TrackPointEntity
+import com.llyytt.path.data.db.TransportMode
+import com.llyytt.path.data.db.TripStatus
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class TripInvariantsTest {
+
+    private fun points(n: Int, gapAt: Int = -1): List<TrackPointEntity> =
+        (0 until n).map { i ->
+            TrackPointEntity(
+                id = i.toLong(),
+                tripId = 1,
+                seq = i,
+                lat = 39.9 + i * 0.0001,
+                lng = 116.4,
+                speedMps = 1.3f,
+                accuracyM = 5f,
+                recordedAt = i * 2000L,
+                source = PointSource.GNSS,
+                startsNewSegment = i == gapAt,
+            )
+        }
+
+    private fun codes(violations: List<TripInvariants.Violation>) = violations.map { it.code }
+
+    // ---------- 分段 ----------
+
+    @Test
+    fun 合法的分段没有任何违规() {
+        val pts = points(10)
+        val segs = listOf(SegmentDraft(0, 9, TransportMode.WALK))
+        assertTrue(TripInvariants.validateSegments(pts, segs, emptyList()).isEmpty())
+    }
+
+    @Test
+    fun 分段重叠会报错() {
+        val pts = points(10)
+        val segs = listOf(
+            SegmentDraft(0, 5, TransportMode.WALK),
+            SegmentDraft(4, 9, TransportMode.BIKE),
+        )
+        assertTrue(codes(TripInvariants.validateSegments(pts, segs, emptyList())).contains("SEGMENT_OVERLAP"))
+    }
+
+    @Test
+    fun 有点没被覆盖会报错() {
+        val pts = points(10)
+        val segs = listOf(SegmentDraft(0, 4, TransportMode.WALK))
+        val violations = TripInvariants.validateSegments(pts, segs, emptyList())
+        assertEquals(5, violations.count { it.code == "POINT_NOT_COVERED" })
+    }
+
+    @Test
+    fun 停留覆盖的点不算漏覆盖() {
+        val pts = points(10)
+        val segs = listOf(
+            SegmentDraft(0, 3, TransportMode.WALK),
+            SegmentDraft(7, 9, TransportMode.WALK),
+        )
+        val stays = listOf(StayDraft(4, 6, 39.9005, 116.4, 2.0, 8000, 12000))
+        assertTrue(TripInvariants.validateSegments(pts, segs, stays).isEmpty())
+    }
+
+    @Test
+    fun 分段跨过中断点不算违规() {
+        // 第 5 个点带 startsNewSegment=true，但整段仍然覆盖 0..9
+        val pts = points(10, gapAt = 5)
+        val segs = listOf(SegmentDraft(0, 9, TransportMode.WALK))
+        assertTrue(
+            "startsNewSegment 只影响画线，不应让校验失败",
+            TripInvariants.validateSegments(pts, segs, emptyList()).isEmpty(),
+        )
+    }
+
+    @Test
+    fun 分段与停留重叠会报错() {
+        val pts = points(10)
+        val segs = listOf(SegmentDraft(0, 9, TransportMode.WALK))
+        val stays = listOf(StayDraft(4, 6, 39.9005, 116.4, 2.0, 8000, 12000))
+        assertTrue(codes(TripInvariants.validateSegments(pts, segs, stays)).contains("SEGMENT_OVERLAPS_STAY"))
+    }
+
+    @Test
+    fun seq不连续会报错() {
+        val pts = points(5).toMutableList()
+        pts[3] = pts[3].copy(seq = 7)
+        assertTrue(codes(TripInvariants.validateSegments(pts, listOf(SegmentDraft(0, 7, TransportMode.WALK)), emptyList()))
+            .contains("SEQ_NOT_DENSE"))
+    }
+
+    // ---------- 暂停状态不变量 ----------
+
+    @Test
+    fun 记录中不允许未闭合暂停() {
+        val open = listOf(1000L to null)
+        assertTrue(codes(TripInvariants.validatePauses(TripStatus.RECORDING, null, open))
+            .contains("PAUSE_OPEN_WHILE_RECORDING"))
+
+        val closed = listOf(1000L to 2000L)
+        assertTrue(TripInvariants.validatePauses(TripStatus.RECORDING, null, closed).isEmpty())
+    }
+
+    @Test
+    fun 暂停中必须恰好一条未闭合() {
+        assertTrue(TripInvariants.validatePauses(TripStatus.PAUSED, null, listOf(1000L to null)).isEmpty())
+
+        assertTrue(codes(TripInvariants.validatePauses(TripStatus.PAUSED, null, emptyList()))
+            .contains("PAUSE_COUNT_INVALID"))
+
+        val two = listOf(1000L to null, 3000L to null)
+        assertTrue(codes(TripInvariants.validatePauses(TripStatus.PAUSED, null, two))
+            .contains("PAUSE_COUNT_INVALID"))
+    }
+
+    @Test
+    fun 已结束必须全部闭合且endedAt非空() {
+        assertTrue(
+            TripInvariants.validatePauses(
+                TripStatus.FINISHED, 9000L, listOf(1000L to 2000L),
+            ).isEmpty(),
+        )
+
+        assertTrue(codes(
+            TripInvariants.validatePauses(TripStatus.FINISHED, 9000L, listOf(1000L to null)),
+        ).contains("PAUSE_OPEN_WHEN_FINISHED"))
+
+        assertTrue(codes(
+            TripInvariants.validatePauses(TripStatus.FINISHED, null, listOf(1000L to 2000L)),
+        ).contains("ENDED_AT_MISSING"))
+    }
+}
+```
+
+
+### 构建与配置
+
+<!-- FILE: app/build.gradle.kts -->
+
+```kotlin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.kapt")
+}
+
+// 高德 Key 不进版本库、不进任何项目文件、也不进命令行历史。
+// 取值顺序：-PAMAP_KEY=xxx  →  环境变量 AMAP_KEY  →  空串（地图会白屏但不影响编译）
+val amapKey: String =
+    (project.findProperty("AMAP_KEY") as String?)?.takeIf { it.isNotBlank() }
+        ?: System.getenv("AMAP_KEY")?.takeIf { it.isNotBlank() }
+        ?: ""
+
+// ---------------------------------------------------------------------------
+// release 签名：密码只能来自 local.properties 或环境变量，绝不写进本文件。
+// local.properties 已在 .gitignore 里，不会被提交。
+//
+// 需要的四个值（前两个是路径/别名，后两个是密码）：
+//   xingji.release.storeFile       例子：D:\\AndroidKeys\\xingji-release.jks
+//   xingji.release.keyAlias        例子：xingji
+//   xingji.release.storePassword   ← 你自己填，我不接触
+//   xingji.release.keyPassword     ← 你自己填，我不接触
+//
+// 也可以用环境变量：XINGJI_STORE_FILE / XINGJI_KEY_ALIAS /
+//                   XINGJI_STORE_PASSWORD / XINGJI_KEY_PASSWORD
+// ---------------------------------------------------------------------------
+val localProps = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun secret(propKey: String, envKey: String): String? =
+    (localProps.getProperty(propKey) ?: System.getenv(envKey))
+        ?.trim()
+        // CHANGE_ME 是模板占位符，等同于「没填」
+        ?.takeIf { it.isNotBlank() && it != "CHANGE_ME" }
+
+val releaseStoreFile = secret("xingji.release.storeFile", "XINGJI_STORE_FILE")
+val releaseKeyAlias = secret("xingji.release.keyAlias", "XINGJI_KEY_ALIAS")
+val releaseStorePassword = secret("xingji.release.storePassword", "XINGJI_STORE_PASSWORD")
+
+// PKCS12 keystore 只有一个密码。keyPassword 没填时直接复用 storePassword，
+// 避免"两个密码写成不一样"这种小白最容易踩的坑。
+val releaseKeyPassword = secret("xingji.release.keyPassword", "XINGJI_KEY_PASSWORD")
+    ?: releaseStorePassword
+
+val hasReleaseSigning = listOf(
+    releaseStoreFile, releaseKeyAlias, releaseStorePassword, releaseKeyPassword,
+).all { !it.isNullOrBlank() }
+
+android {
+    namespace = "com.llyytt.path"
+    compileSdk = 36
+    // 本机已装 36.0.0；不写这行 AGP 会去找它默认的 35.0.0 然后失败
+    buildToolsVersion = "36.0.0"
+
+    defaultConfig {
+        applicationId = "com.llyytt.path"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = 1
+        versionName = "0.2.0"
+
+        manifestPlaceholders["amapKey"] = amapKey
+
+        // K80 是 arm64；只打一个 ABI，16KB 检查结果才唯一
+        ndk {
+            abiFilters.add("arm64-v8a")
+        }
+    }
+
+    // 调试签名固定在工程内，避免换电脑/重装 Android Studio 后 SHA1 变化导致高德 Key 失效。
+    // 密码 "android" 是 Android 调试证书的公开约定，不是机密；正式包用 release keystore。
+    //
+    // 注意：signingConfigs 必须写在 buildTypes 之前——buildTypes 里要引用它，
+    // 顺序反了会报 "SigningConfig with name 'release' not found"。
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/xingji-debug.jks")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // R8 开着：缩小体积 + 混淆。地图 SDK 和 Room 的 keep 规则在 proguard-rules.pro
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // 没配密码就不签名，产出 app-release-unsigned.apk，绝不退化成调试签名
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
+
+    // 本地 aar 没有 POM，关掉 metadata 检查省得 Sync 报警
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
+kapt {
+    correctErrorTypes = true
+    arguments {
+        // 导出 Room schema，做数据库迁移时要用
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+}
+
+dependencies {
+    // 版本刻意停在「AGP 8.x / compileSdk 36」这一代：
+    // 2026 年的最新 AndroidX 要求 AGP 9.1 + compileSdk 37，会把工具链顶到未验证的组合上。
+    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
+    implementation("androidx.activity:activity-compose:1.10.1")
+
+    implementation(platform("androidx.compose:compose-bom:2025.06.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+
+    // Room。用 KAPT 而不是 KSP：KSP 的版本号要跟 Kotlin 严格配对，
+    // 当前 Kotlin 2.4.21 没有对应的 KSP 发布，KAPT 是稳妥选择。
+    implementation("androidx.room:room-runtime:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
+
+    // AI 聊天：HTTP + 加密设置存储
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+    kapt("androidx.room:room-compiler:2.8.5")
+    // Room 的处理器自带的 kotlin-metadata-jvm 只认到 Kotlin 2.3 的元数据，
+    // 而本项目用 Kotlin 2.4.21（元数据 2.4.0）。这里把读取库顶到同版本。
+    kapt("org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.21")
+
+    testImplementation("junit:junit:4.13.2")
+
+    // 高德 3D 地图 SDK（11.3.100）。官方自 11.x 起只发「classes.jar + 独立 .so」，
+    // 不再提供单文件 AAR，所以 classes 放 libs/、native 放 src/main/jniLibs/。
+    implementation(files("libs/amap-sdk-11.3.100.jar"))
+}
+```
+
+<!-- FILE: app/proguard-rules.pro -->
+
+```proguard
+# ---------------------------------------------------------------------------
+# 高德地图 SDK（11.3.100）
+#
+# SDK 以 classes.jar 形式提供，没有 consumer rules，且内部大量使用反射 + JNI 回调。
+# 不 keep 的话表现是：编译通过、启动正常，一打开地图就白屏或直接崩在 native 层。
+# ---------------------------------------------------------------------------
+-keep class com.amap.api.** { *; }
+-keep class com.autonavi.** { *; }
+-keep class com.loc.** { *; }
+-dontwarn com.amap.api.**
+-dontwarn com.autonavi.**
+-dontwarn com.loc.**
+
+# 高德 jar 里 location 模块引用了未随包发布的 GNSS 类，
+# 不抑制的话 R8 会直接判构建失败（不是"警告"级别的失败，是整个 minify 任务挂掉）。
+-dontwarn com.amap.ams.**
+-dontwarn com.amap.location.**
+
+# JNI 通过类名/方法名查找，必须保留 native 方法所在类
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# ---------------------------------------------------------------------------
+# Room
+# 生成的 _Impl 类由 Room 反射实例化；Room 2.8 自带规则，这里补一条兜底。
+# ---------------------------------------------------------------------------
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep @androidx.room.Entity class * { *; }
+
+# ---------------------------------------------------------------------------
+# Kotlin 协程 / OkHttp
+# OkHttp 4 与 Okio 都带 consumer rules，这里只压掉可选依赖的警告。
+# ---------------------------------------------------------------------------
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+```
+
+<!-- FILE: app/src/main/AndroidManifest.xml -->
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 地图底图必须联网；离线只靠 SDK 缓存 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- 定位 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- 前台服务：Android 14+ 必须同时声明 FOREGROUND_SERVICE 和具体类型 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- Android 13+ 通知权限，否则前台服务的通知会被静默丢掉 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+
+        android:networkSecurityConfig="@xml/network_security_config"
+                android:name=".XjApp"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Xingji">
+
+        <!-- 高德 Key：构建时用 -PAMAP_KEY 注入，不进版本库 -->
+        <meta-data
+            android:name="com.amap.api.v2.apikey"
+            android:value="${amapKey}" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Xingji">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            stopWithTask=false：从最近任务划掉 App 时服务继续跑，
+            这样「划掉界面 = 停止记录」这个坑不会发生。
+        -->
+        <service
+            android:name=".service.RecordingService"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            android:stopWithTask="false" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>
+```
+
+<!-- FILE: app/src/main/res/xml/file_paths.xml -->
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 只暴露缓存目录下的 share/，别的路径不给外部访问 -->
+<paths>
+    <cache-path name="share" path="share/" />
+</paths>
+```
+
+<!-- FILE: app/src/main/res/xml/network_security_config.xml -->
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  允许明文 HTTP。
+
+  为什么必须开：AI 服务的 BaseURL 由用户自己填，有人会用局域网里的 http 服务
+  （比如自建代理）。系统默认禁止明文，开启前 App 会弹窗警告"Key 可能被窃取"，
+  用户显式确认后才保存。
+
+  风险边界：
+  - 只影响用户手动配置的 AI 请求，其它网络请求（高德地图 SDK）仍是 https
+  - 默认推荐 https，UI 上 http 保存时强制二次确认
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+```
+
+<!-- FILE: build.gradle.kts -->
+
+```kotlin
+plugins {
+    id("com.android.application") version "8.13.2" apply false
+    id("org.jetbrains.kotlin.android") version "2.4.21" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.21" apply false
+}
+```
+
+<!-- FILE: gradle.properties -->
+
+```properties
+org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8 "-Djava.io.tmpdir=C:/Users/27603/Downloads/path/_tmp"
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configuration-cache=false
+
+# 沙箱里文件监听会因权限失败（Couldn't open current thread），关掉
+org.gradle.vfs.watch=false
+
+android.useAndroidX=true
+android.nonTransitiveRClass=true
+
+kotlin.code.style=official
+
+# Kotlin 编译守护进程要写 %LOCALAPPDATA%\kotlin\daemon，沙箱里被拒；
+# 改成在 Gradle 进程内编译，绕开这个目录。
+kotlin.compiler.execution.strategy=in-process
+```
+
+<!-- FILE: settings.gradle.kts -->
+
+```kotlin
+pluginManagement {
+    repositories {
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "Xingji"
+include(":app")
+```
+
+<!-- FILE: tools/Check-16Kb.ps1 -->
+
+```powershell
+<#
+.SYNOPSIS
+    检查 Android 原生库（.so）是否满足 16 KB 页对齐。
+
+.DESCRIPTION
+    Android 15 起，部分设备（含部分 Android 16 机型）使用 16 KB 内存页。
+    这类设备要求 .so 的 ELF 段按 16 KB 对齐（p_align >= 16384），
+    否则 App 一加载 native 库就崩溃，且无法在真机上补救。
+
+    本脚本直接解析 ELF 程序头，不依赖 NDK / readelf / Python。
+    支持输入：.apk / .aab / .aar / .zip / .so 文件，或一个目录。
+
+.EXAMPLE
+    .\Check-16Kb.ps1 .\app\build\outputs\apk\debug\app-debug.apk
+
+.EXAMPLE
+    .\Check-16Kb.ps1 D:\sdk\AMap_3DMap_V11.3.100.aar
+#>
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true, Position = 0)]
+    [string]$Path,
+
+    # 默认只看名字里含这些关键字的库；加 -All 检查全部 .so
+    [string[]]$Only = @('AMap', 'amap'),
+
+    [switch]$All
+)
+
+Set-StrictMode -Version 2.0
+$ErrorActionPreference = 'Stop'
+
+function Get-ElfLoadAlign {
+    param([byte[]]$Bytes)
+
+    if ($null -eq $Bytes -or $Bytes.Length -lt 52) { throw '文件太小，不是有效的 ELF' }
+    if (-not ($Bytes[0] -eq 0x7F -and $Bytes[1] -eq 0x45 -and $Bytes[2] -eq 0x4C -and $Bytes[3] -eq 0x46)) {
+        throw '文件头不是 ELF magic（可能不是 .so）'
+    }
+
+    $is64 = ($Bytes[4] -eq 2)
+    $isLittleEndian = ($Bytes[5] -eq 1)
+    if (-not $isLittleEndian) { throw '暂不支持大端 ELF' }
+    if ($is64 -and $Bytes.Length -lt 64) { throw 'ELF64 头不完整' }
+
+    if ($is64) {
+        $phoff = [BitConverter]::ToUInt64($Bytes, 32)
+        $phentsize = [BitConverter]::ToUInt16($Bytes, 54)
+        $phnum = [BitConverter]::ToUInt16($Bytes, 56)
+        $alignOffsetInPhdr = 48
+    }
+    else {
+        $phoff = [uint64][BitConverter]::ToUInt32($Bytes, 28)
+        $phentsize = [BitConverter]::ToUInt16($Bytes, 42)
+        $phnum = [BitConverter]::ToUInt16($Bytes, 44)
+        $alignOffsetInPhdr = 28
+    }
+
+    $aligns = New-Object 'System.Collections.Generic.List[uint64]'
+    for ($i = 0; $i -lt $phnum; $i++) {
+        $base = [int]($phoff + [uint64]($i * $phentsize))
+        if (($base + $phentsize) -gt $Bytes.Length) { break }
+        $pType = [BitConverter]::ToUInt32($Bytes, $base)
+        if ($pType -ne 1) { continue }   # 只看 PT_LOAD
+        if ($is64) {
+            $align = [BitConverter]::ToUInt64($Bytes, $base + $alignOffsetInPhdr)
+        }
+        else {
+            $align = [uint64][BitConverter]::ToUInt32($Bytes, $base + $alignOffsetInPhdr)
+        }
+        $aligns.Add($align)
+    }
+    return , $aligns
+}
+
+# ---------- 收集待检查的 .so ----------
+$items = New-Object 'System.Collections.Generic.List[object]'
+$resolved = (Resolve-Path -LiteralPath $Path).ProviderPath
+
+if (Test-Path -LiteralPath $resolved -PathType Container) {
+    Get-ChildItem -LiteralPath $resolved -Recurse -File -Filter '*.so' | ForEach-Object {
+        $items.Add([pscustomobject]@{ Name = $_.FullName; Bytes = [System.IO.File]::ReadAllBytes($_.FullName) })
+    }
+}
+elseif ($resolved -match '\.so$') {
+    $items.Add([pscustomobject]@{ Name = $resolved; Bytes = [System.IO.File]::ReadAllBytes($resolved) })
+}
+else {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($resolved)
+    try {
+        foreach ($entry in $zip.Entries) {
+            if ($entry.FullName -notmatch '\.so$') { continue }
+            $ms = New-Object System.IO.MemoryStream
+            $stream = $entry.Open()
+            try { $stream.CopyTo($ms) } finally { $stream.Dispose() }
+            $items.Add([pscustomobject]@{ Name = $entry.FullName; Bytes = $ms.ToArray() })
+            $ms.Dispose()
+        }
+    }
+    finally { $zip.Dispose() }
+}
+
+if (-not $All) {
+    $filtered = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($it in $items) {
+        $leaf = ($it.Name -split '[\\/]')[-1]
+        $hit = $false
+        foreach ($k in $Only) { if ($leaf -like "*$k*") { $hit = $true; break } }
+        if ($hit) { $filtered.Add($it) }
+    }
+    $items = $filtered
+}
+
+if ($items.Count -eq 0) {
+    Write-Host '没有找到要检查的 .so。' -ForegroundColor Yellow
+    Write-Host '如果确认包里有 .so，请加 -All 再试一次。' -ForegroundColor Yellow
+    exit 2
+}
+
+# ---------- 检查并输出 ----------
+Write-Host ''
+Write-Host ('检查目标：' + $resolved) -ForegroundColor Cyan
+Write-Host ('共 ' + $items.Count + ' 个 native 库') -ForegroundColor Cyan
+Write-Host ''
+
+$allPass = $true
+$rows = New-Object 'System.Collections.Generic.List[object]'
+
+foreach ($it in $items) {
+    $leaf = ($it.Name -split '[\\/]')[-1]
+    $abi = '?'
+    if ($it.Name -match '(arm64-v8a|armeabi-v7a|x86_64|x86)') { $abi = $Matches[1] }
+
+    $alignText = ''
+    $verdict = ''
+    $ok = $false
+
+    try {
+        $aligns = Get-ElfLoadAlign -Bytes $it.Bytes
+        if ($aligns.Count -eq 0) {
+            $alignText = '(无 PT_LOAD)'
+            $verdict = '跳过'
+            $ok = $true
+        }
+        else {
+            $min = ($aligns | Measure-Object -Minimum).Minimum
+            $alignText = [string]$min
+            if ($min -ge 16384) { $verdict = '通过 16KB'; $ok = $true }
+            else { $verdict = '不通过 (' + [string]([int]$min / 1024) + 'KB)'; $ok = $false }
+        }
+    }
+    catch {
+        $alignText = '-'
+        $verdict = '解析失败：' + $_.Exception.Message
+        $ok = $false
+    }
+
+    if (-not $ok) { $allPass = $false }
+    $rows.Add([pscustomobject]@{
+            Abi     = $abi
+            Library = $leaf
+            Align   = $alignText
+            Verdict = $verdict
+            Ok      = $ok
+        })
+}
+
+$rows | Format-Table -AutoSize -Property Abi, Library, Align, Verdict | Out-String -Width 200 | Write-Host
+
+if ($allPass) {
+    Write-Host '结论：全部通过 16 KB 页对齐，可以在这类设备上运行。' -ForegroundColor Green
+    Write-Host 'RESULT: PASS (all PT_LOAD p_align >= 16384)'
+    exit 0
+}
+else {
+    Write-Host '结论：存在 4KB 对齐的库，在 16KB 页设备上加载会崩溃，不能继续。' -ForegroundColor Red
+    Write-Host 'RESULT: FAIL (found PT_LOAD p_align < 16384)'
+    exit 1
+}
+```
