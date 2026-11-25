@@ -49,6 +49,12 @@ import com.llyytt.path.core.rules.SpeedSeries
 import com.llyytt.path.data.repo.TripDetail
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import com.llyytt.path.ui.XingjiTheme
 
 /**
  * 行程详情：地图 + 统计 + 简版回放。
@@ -60,6 +66,7 @@ import kotlin.math.roundToInt
 @Composable
 fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Unit) {
     val context = LocalContext.current
+    val palette = XingjiTheme.palette
     val app = context.applicationContext as XjApp
     val engine = remember { app.mapEngine() }
     val controller = remember { engine.createController() }
@@ -216,169 +223,241 @@ fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Uni
     Box(modifier = Modifier.fillMaxSize()) {
         engine.MapView(controller = controller, modifier = Modifier.fillMaxSize())
 
-        // 顶部栏
-        Surface(
-            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        // 顶部压一层暗色渐变，保证白色文字在浅色地图上也读得清
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(220.dp)
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent),
+                    ),
+                ),
+        )
+
+        // 顶部：悬浮一层，不用不透明顶栏，让地图透出来
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.statusBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            TextButton(
+                onClick = onBack,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp),
             ) {
-                TextButton(onClick = onBack) { Text("返回") }
+                Text("←", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = d?.let { Fmt.dateTime(it.trip.startedAt) } ?: "行程详情",
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White,
+                modifier = Modifier.weight(1f),
+            )
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(18.dp))
+                    .clickable {
+                        colorMode = if (colorMode == TrackColorMode.SPEED) {
+                            TrackColorMode.MODE
+                        } else {
+                            TrackColorMode.SPEED
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
                 Text(
-                    text = d?.let { Fmt.dateTime(it.trip.startedAt) } ?: "行程详情",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
+                    text = if (colorMode == TrackColorMode.SPEED) "按速度" else "按方式",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = palette.accent,
                 )
-                TextButton(onClick = {
-                    colorMode = if (colorMode == TrackColorMode.SPEED) TrackColorMode.MODE else TrackColorMode.SPEED
-                }) {
-                    Text(if (colorMode == TrackColorMode.SPEED) "按速度" else "按方式")
-                }
             }
         }
 
-        // 底部面板
-        Card(
+        // 底部面板：圆角 + 顶部一条橙色线
+        Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(12.dp)
                 .fillMaxWidth(),
+            color = palette.panel,
+            shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                if (d == null) {
-                    Text("加载中…", style = MaterialTheme.typography.bodyMedium)
-                    return@Card
-                }
-
-                val stats = d.stats
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+            androidx.compose.foundation.layout.Box {
+                Column(
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 22.dp),
                 ) {
-                    Stat("距离", Fmt.distance(stats.distanceMeters))
-                    Stat("活动时长", Fmt.duration(stats.activeMillis))
-                    Stat("均速", Fmt.speed(stats.avgSpeedMps))
-                    Stat("最高", Fmt.speed(stats.maxSpeedMps))
-                }
-
-                Spacer(Modifier.height(10.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("${stats.pointCount} 个点", style = MaterialTheme.typography.labelMedium)
-                    if (stats.gapCount > 0) {
-                        Text("${stats.gapCount} 处中断", style = MaterialTheme.typography.labelMedium)
+                    if (d == null) {
+                        Text("加载中…", style = MaterialTheme.typography.bodyMedium)
+                        return@Column
                     }
-                    if (d.stays.isNotEmpty()) {
-                        Text("${d.stays.size} 个停留", style = MaterialTheme.typography.labelMedium)
-                    }
-                    if (d.segments.isEmpty()) {
-                        Text(
-                            "尚未分段 · 编辑",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { onOpenSegments() },
-                        )
-                    } else {
-                        Text(
-                            "${d.segments.size} 段 · 编辑",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { onOpenSegments() },
-                        )
-                    }
-                }
 
-                Text(
-                    text = "底图缓存：弱网可看部分区域，不保证完整",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                if (d.points.size > 1) {
-                    Spacer(Modifier.height(4.dp))
-                    val idx = cursor.roundToInt()
-                    val p = d.points.getOrNull(idx)
-                    val speed = speeds.getOrNull(idx)
+                    val stats = d.stats
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text(
-                            text = p?.let { Fmt.clock(it.recordedAt) } ?: "--:--",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        if (showSpeed) {
-                            Text(
-                                text = when {
-                                    speed?.stationary == true -> "静止"
-                                    speed?.smoothedMps != null -> Fmt.speed(speed.smoothedMps)
-                                    else -> "--"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        Text(
-                            text = p?.let { "已走 ${Fmt.distance(cumulative.getOrElse(idx) { 0.0 })}" } ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                        Stat("距离", distanceValue(stats.distanceMeters), distanceUnit(stats.distanceMeters))
+                        Stat("时长", Fmt.duration(stats.activeMillis), "")
+                        Stat("均速", speedValue(stats.avgSpeedMps), "km/h")
+                        Stat("最高", speedValue(stats.maxSpeedMps), "km/h")
                     }
 
-                    Slider(
-                        value = cursor,
-                        onValueChange = {
-                            playing = false
-                            cursor = it
-                        },
-                        valueRange = 0f..(d.points.size - 1).toFloat(),
-                    )
+                    Spacer(Modifier.height(18.dp))
 
+                    // meta：大写小标签，可点进入分段编辑
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onOpenSegments() },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        TextButton(onClick = {
-                            if (!playing && cursor >= d.points.size - 1) cursor = 0f
-                            playing = !playing
-                            if (playing) follow = true
-                        }) {
-                            Text(if (playing) "暂停" else "回放")
-                        }
-                        TextButton(onClick = { follow = !follow }) {
-                            Text(if (follow) "跟随：开" else "跟随：关")
-                        }
-                    }
-                } else {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "这条行程没有轨迹点（可能是开始后一直没定位成功）",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(onClick = { showFormatDialog = true }) { Text("导出") }
-                    TextButton(onClick = { shareTrip() }) { Text("分享图") }
-                    TextButton(onClick = { showDeleteDialog = true }) {
-                        Text("删除", color = MaterialTheme.colorScheme.error)
-                    }
-                    exportMessage?.let {
                         Text(
-                            text = it,
+                            text = buildString {
+                                append("${stats.pointCount} POINTS")
+                                if (stats.gapCount > 0) append("   ${stats.gapCount} GAP")
+                                if (d.stays.isNotEmpty()) append("   ${d.stays.size} STAY")
+                                if (d.segments.isEmpty()) append("   NO SEGMENT") else
+                                    append("   ${d.segments.size} SEGMENTS")
+                            },
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = palette.textTertiary,
                             modifier = Modifier.weight(1f),
                         )
+                        Text(
+                            text = "编辑 ›",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = palette.accent,
+                        )
+                    }
+
+                    if (d.points.size > 1) {
+                        Spacer(Modifier.height(18.dp))
+                        val idx = cursor.roundToInt()
+                        val p = d.points.getOrNull(idx)
+                        val speed = speeds.getOrNull(idx)
+
+                        // 回放条：橙色已播放 + 白色圆点
+                        Slider(
+                            value = cursor,
+                            onValueChange = {
+                                playing = false
+                                cursor = it
+                            },
+                            valueRange = 0f..(d.points.size - 1).toFloat(),
+                            colors = androidx.compose.material3.SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.onSurface,
+                                activeTrackColor = palette.accent,
+                                inactiveTrackColor = palette.hairline,
+                            ),
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = p?.let { Fmt.clock(it.recordedAt) } ?: "--:--",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            if (showSpeed) {
+                                Text(
+                                    text = when {
+                                        speed?.stationary == true -> "静止"
+                                        speed?.smoothedMps != null -> Fmt.speed(speed.smoothedMps)
+                                        else -> "--"
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = palette.amber,
+                                )
+                            }
+                            Text(
+                                text = p?.let {
+                                    "已走 ${Fmt.distance(cumulative.getOrElse(idx) { 0.0 })}"
+                                } ?: "",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    if (!playing && cursor >= d.points.size - 1) cursor = 0f
+                                    playing = !playing
+                                    if (playing) follow = true
+                                },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                    horizontal = 0.dp,
+                                ),
+                            ) {
+                                Text(
+                                    text = if (playing) "暂停回放" else "回放",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = palette.accent,
+                                )
+                            }
+                            Spacer(Modifier.width(24.dp))
+                            TextButton(
+                                onClick = { follow = !follow },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                    horizontal = 0.dp,
+                                ),
+                            ) {
+                                Text(
+                                    text = if (follow) "跟随：开" else "跟随：关",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = palette.textTertiary,
+                                )
+                            }
+                        }
+                    } else {
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "这条行程没有轨迹点（可能是开始后一直没定位成功）",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = palette.textTertiary,
+                        )
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(28.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ActionText("导出", palette.textTertiary) { showFormatDialog = true }
+                        ActionText("分享图", palette.textTertiary) { shareTrip() }
+                        ActionText("删除", MaterialTheme.colorScheme.error) { showDeleteDialog = true }
+                        exportMessage?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = palette.textTertiary,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                 }
+
+                // 顶部那条橙色线
+                androidx.compose.foundation.layout.Box(
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .background(palette.accent),
+                )
             }
         }
 
@@ -441,17 +520,47 @@ fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Uni
 }
 
 @Composable
-private fun Stat(label: String, value: String) {
+private fun Stat(label: String, value: String, unit: String) {
     Column {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = XingjiTheme.palette.textTertiary,
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
-        )
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 40.sp),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            if (unit.isNotEmpty()) {
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = unit,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = XingjiTheme.palette.textTertiary,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
+        }
     }
 }
+
+@Composable
+private fun ActionText(label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelMedium, color = color)
+    }
+}
+
+private fun distanceValue(meters: Double): String =
+    if (meters < 1000) "%.0f".format(meters) else "%.2f".format(meters / 1000.0)
+
+private fun distanceUnit(meters: Double): String =
+    if (meters < 1000) "米" else "公里"
+
+private fun speedValue(v: Double): String = "%.1f".format(v)
