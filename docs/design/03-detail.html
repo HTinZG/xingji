@@ -1,0 +1,76 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0B0D10; --surface:#14171C; --line:#262B32;
+  --text:#F5F5F7; --text2:#8A8F98; --text3:#5A6068;
+  --accent:#FF6B1A; --amber:#FFC24B; --danger:#FF453A;
+}
+body {
+  width:1280px; height:2772px; background:var(--bg); color:var(--text);
+  font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+  overflow:hidden; position:relative;
+}
+.pad { padding:0 72px; }
+.brand { display:flex; align-items:center; gap:18px; }
+.dot { width:22px; height:22px; border-radius:50%; background:var(--accent); }
+.brand-name { font-size:26px; font-weight:700; letter-spacing:3px; }
+.eyebrow { font-size:22px; font-weight:700; letter-spacing:5px; color:var(--text3); }
+.muted { color:var(--text2); }
+.dim { color:var(--text3); }
+.num { font-variant-numeric: tabular-nums; letter-spacing:-2px; }
+
+.map { position:absolute; top:0; left:0; width:1280px; height:1660px;
+  background:url('file:///D:/Xingji/docs/design/map-only.png') center/cover no-repeat; }
+.map::after { content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(11,13,16,.55) 0%, rgba(11,13,16,.25) 30%, rgba(11,13,16,.75) 100%); }
+.map .tint { position:absolute; inset:0; background:rgba(11,13,16,.45); }
+.top { position:absolute; top:140px; left:72px; right:72px; display:flex;
+  justify-content:space-between; align-items:center; z-index:2; }
+.back { font-size:52px; color:var(--text); }
+.date { font-size:30px; font-weight:700; letter-spacing:2px; margin-left:22px; }
+.chip { padding:10px 26px; border-radius:24px; background:rgba(0,0,0,.55);
+  font-size:26px; color:var(--accent); }
+.panel { position:absolute; left:0; right:0; bottom:0; height:1112px; padding:96px 72px 0;
+  background:var(--surface); border-radius:44px 44px 0 0; }
+.panel::before { content:''; position:absolute; top:0; left:0; right:0; height:4px;
+  background:var(--accent); border-radius:44px 44px 0 0; }
+.stats { display:flex; }
+.stat { flex:1; }
+.stat .k { font-size:22px; font-weight:700; letter-spacing:2px; color:var(--text3); }
+.stat .v { font-size:64px; font-weight:700; margin-top:20px; }
+.stat .u { font-size:26px; color:var(--text2); margin-left:8px; font-weight:400; }
+.meta { margin-top:64px; font-size:22px; font-weight:700;
+  letter-spacing:2px; color:var(--text2); }
+.slider { margin-top:56px; }
+.track { height:10px; border-radius:5px; background:var(--line); position:relative; }
+.fill { position:absolute; left:0; top:0; height:10px; width:960px;
+  border-radius:5px; background:var(--accent); }
+.knob { position:absolute; top:-13px; left:944px; width:36px; height:36px; border-radius:18px;
+  background:var(--text); box-shadow:0 4px 14px rgba(0,0,0,.5); }
+.time { display:flex; justify-content:space-between; margin-top:34px;
+  font-size:30px; color:var(--text2); }
+.actions { margin-top:96px; display:flex; gap:72px; }
+.actions span { font-size:30px; color:var(--text2); }
+.actions .danger { color:var(--danger); }
+</style></head><body>
+<div class="map"><div class="tint"></div></div>
+<div class="top">
+  <div style="display:flex;align-items:center"><span class="back">←</span><span class="date">11-16 20:03</span></div>
+  <div class="chip">按速度</div>
+</div>
+<div class="panel">
+  <div class="stats">
+    <div class="stat"><div class="k">距离</div><div class="v num">932<span class="u">米</span></div></div>
+    <div class="stat"><div class="k">活动时长</div><div class="v num">05:28</div></div>
+    <div class="stat"><div class="k">均速</div><div class="v num">10.2<span class="u">km/h</span></div></div>
+    <div class="stat"><div class="k">最高</div><div class="v num">19.8<span class="u">km/h</span></div></div>
+  </div>
+  <div class="meta">165 POINTS&nbsp;&nbsp;&nbsp;1 GAP&nbsp;&nbsp;&nbsp;1 STAY&nbsp;&nbsp;&nbsp;3 SEGMENTS</div>
+  <div class="slider">
+    <div class="track"><div class="fill"></div><div class="knob"></div></div>
+    <div class="time"><span>20:09</span><span>已走 932 米</span></div>
+  </div>
+  <div class="actions"><span>导出</span><span>分享图</span><span class="danger">删除</span></div>
+</div>
+</body></html>

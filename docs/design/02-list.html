@@ -1,0 +1,58 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0B0D10; --surface:#14171C; --line:#262B32;
+  --text:#F5F5F7; --text2:#8A8F98; --text3:#5A6068;
+  --accent:#FF6B1A; --amber:#FFC24B; --danger:#FF453A;
+}
+body {
+  width:1280px; height:2772px; background:var(--bg); color:var(--text);
+  font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+  overflow:hidden; position:relative;
+}
+.pad { padding:0 72px; }
+.brand { display:flex; align-items:center; gap:18px; }
+.dot { width:22px; height:22px; border-radius:50%; background:var(--accent); }
+.brand-name { font-size:26px; font-weight:700; letter-spacing:3px; }
+.eyebrow { font-size:22px; font-weight:700; letter-spacing:5px; color:var(--text3); }
+.muted { color:var(--text2); }
+.dim { color:var(--text3); }
+.num { font-variant-numeric: tabular-nums; letter-spacing:-2px; }
+
+.header { position:absolute; top:140px; left:72px; right:72px; display:flex;
+  justify-content:space-between; align-items:center; }
+.title { position:absolute; top:230px; left:66px; font-size:88px; font-weight:700; }
+.refresh { position:absolute; top:280px; right:72px; font-size:30px; color:var(--text2); }
+.rows { position:absolute; top:470px; left:72px; right:72px; }
+.row { padding:34px 0 30px; border-bottom:1px solid var(--line); }
+.row .top { display:flex; justify-content:space-between; align-items:baseline; }
+.row .date { font-size:24px; font-weight:700; letter-spacing:2px; color:var(--text3); }
+.row .dur { font-size:52px; font-weight:700; color:var(--amber); }
+.row .main { display:flex; align-items:baseline; margin-top:14px; }
+.row .dist { font-size:110px; font-weight:700; line-height:1; }
+.row .unit { font-size:34px; color:var(--text2); margin-left:14px; }
+.row .meta { font-size:26px; color:var(--text2); margin-top:16px; }
+.foot { position:absolute; bottom:120px; left:72px; }
+</style></head><body>
+<div class="header">
+  <div class="brand"><span class="dot"></span><span class="brand-name">XINGJI</span></div>
+</div>
+<div class="title">行程</div>
+<div class="refresh">刷新</div>
+<div class="rows">
+  <div class="row"><div class="top"><span class="date">11-16 20:03</span><span class="dur num">5:28</span></div>
+    <div class="main num"><span class="dist">932</span><span class="unit">米</span></div>
+    <div class="meta">165 点 · 3 段 · 1 个停留</div></div>
+  <div class="row"><div class="top"><span class="date">11-16 19:13</span><span class="dur num">13:22</span></div>
+    <div class="main num"><span class="dist">17</span><span class="unit">米</span></div>
+    <div class="meta">5 点</div></div>
+  <div class="row"><div class="top"><span class="date">11-16 19:05</span><span class="dur num">0:36</span></div>
+    <div class="main num"><span class="dist">105</span><span class="unit">米</span></div>
+    <div class="meta">5 点</div></div>
+  <div class="row"><div class="top"><span class="date">11-16 18:33</span><span class="dur num">2:18</span></div>
+    <div class="main num"><span class="dist">0</span><span class="unit">米</span></div>
+    <div class="meta">0 点</div></div>
+</div>
+<div class="foot eyebrow">TAP A TRIP TO OPEN</div>
+</body></html>
