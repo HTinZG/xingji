@@ -494,16 +494,18 @@ adb logcat -d | findstr /i "authErrLog"
 
 ### 这台机器上的特殊配置
 
-推送时踩过一次 Recv failure: Connection was reset——**git 不会自动使用系统代理**。
-本仓库已把代理写进本地配置：
+推送踩过两种网络情况，都要会处理：
+
+- **直连被重置**（Recv failure: Connection was reset）：git 不会自动用系统代理，需要显式配置
+- **代理没开时反而报错**（Failed to connect ... over proxy）：说明配了代理但代理没启动
+
+一条命令临时走代理，不动配置：
 
 ```powershell
-cd D:\Xingji
-git config http.proxy  http://127.0.0.1:7897
-git config https.proxy http://127.0.0.1:7897
+git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push
 ```
 
-如果哪天换了代理软件或端口变了，改这两行即可（git config --unset 可去掉）。
+直连能用时不要写死代理配置，否则代理一关就推不上去（踩过）。
 
 凭据用 Git Credential Manager 存在 Windows 凭据管理器里，登录过一次就不用再登。
 helper 的路径带空格，必须用 !"..." 包起来，否则 git 会把它当成 `git-credential-<名字>` 去找：
@@ -577,6 +579,8 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 「定位总开关是关的」这句话，用户不一定知道去哪开。
 在错误下面直接给「打开定位设置」按钮（ACTION_LOCATION_SOURCE_SETTINGS），
 权限问题则给「打开应用权限」（ACTION_APPLICATION_DETAILS_SETTINGS）。
+
+---
 
 ---
 

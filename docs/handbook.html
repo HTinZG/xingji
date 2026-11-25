@@ -390,12 +390,14 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <h2 id="s37">13. GitHub 仓库</h2>
 <p><strong>地址</strong>：https://github.com/HTinZG/xingji （私有）</p>
 <h3 id="s38">这台机器上的特殊配置</h3>
-<p>推送时踩过一次 Recv failure: Connection was reset——<strong>git 不会自动使用系统代理</strong>。</p>
-<p>本仓库已把代理写进本地配置：</p>
-<pre><code>cd D:\Xingji
-git config http.proxy  http://127.0.0.1:7897
-git config https.proxy http://127.0.0.1:7897</code></pre>
-<p>如果哪天换了代理软件或端口变了，改这两行即可（git config --unset 可去掉）。</p>
+<p>推送踩过两种网络情况，都要会处理：</p>
+<ul>
+<li><strong>直连被重置</strong>（Recv failure: Connection was reset）：git 不会自动用系统代理，需要显式配置</li>
+<li><strong>代理没开时反而报错</strong>（Failed to connect ... over proxy）：说明配了代理但代理没启动</li>
+</ul>
+<p>一条命令临时走代理，不动配置：</p>
+<pre><code>git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push</code></pre>
+<p>直连能用时不要写死代理配置，否则代理一关就推不上去（踩过）。</p>
 <p>凭据用 Git Credential Manager 存在 Windows 凭据管理器里，登录过一次就不用再登。</p>
 <p>helper 的路径带空格，必须用 !&quot;...&quot; 包起来，否则 git 会把它当成 <code>git-credential-&lt;名字&gt;</code> 去找：</p>
 <pre><code>git config credential.helper &#x27;!&quot;/c/Program Files/Git/mingw64/bin/git-credential-manager.exe&quot;&#x27;</code></pre>
@@ -446,6 +448,7 @@ git push</code></pre>
 <p>「定位总开关是关的」这句话，用户不一定知道去哪开。</p>
 <p>在错误下面直接给「打开定位设置」按钮（ACTION_LOCATION_SOURCE_SETTINGS），</p>
 <p>权限问题则给「打开应用权限」（ACTION_APPLICATION_DETAILS_SETTINGS）。</p>
+<hr>
 <hr>
 <h2 id="s44">附录 A：源码全文</h2>
 <blockquote>为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」， 那时翻 GitHub 不如在本地文档里直接搜关键词快。 源码本身以仓库为准，这里这份是<strong>某一时刻的快照</strong>（62 个文件 / 8173 行）。 改完代码后运行 <code>python tools/gen-handbook.py</code> 重新生成。</blockquote>
