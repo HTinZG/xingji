@@ -7,7 +7,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.content.FileProvider
+import com.llyytt.path.R
 import java.io.File
 
 /**
@@ -18,13 +20,23 @@ import java.io.File
  *
  * 这里只拿地图控件的 `snapshot()`，然后自己画一条统计带拼在下面，
  * 所以分享图里必然只有：地图 + 轨迹 + 统计数字。
+ *
+ * 配色跟随 App 的深色主题：近黑底 + 日落橙 + 大写窄体标签。
  */
 object ShareComposer {
 
-    private const val BAND_RATIO = 0.24f
-    private const val MIN_BAND_PX = 240f
+    private const val BAND_RATIO = 0.26f
+    private const val MIN_BAND_PX = 260f
+
+    private const val BG = 0xFF0B0D10.toInt()
+    private const val ACCENT = 0xFFFF6B1A.toInt()
+    private const val AMBER = 0xFFFFC24B.toInt()
+    private const val TEXT = 0xFFF5F5F7.toInt()
+    private const val TEXT_2 = 0xFF8A8F98.toInt()
+    private const val TEXT_3 = 0xFF5A6068.toInt()
 
     fun compose(
+        context: Context,
         map: Bitmap,
         title: String,
         subtitle: String,
@@ -35,43 +47,48 @@ object ShareComposer {
 
         val output = Bitmap.createBitmap(width, map.height + bandHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
-        canvas.drawColor(Color.WHITE)
+        canvas.drawColor(BG)
         canvas.drawBitmap(map, 0f, 0f, null)
 
         val top = map.height.toFloat()
-        canvas.drawRect(0f, top, width.toFloat(), output.height.toFloat(), Paint().apply {
-            color = Color.WHITE
+
+        // 顶部一条橙色线：和 App 里的面板保持一致
+        canvas.drawRect(0f, top, width.toFloat(), top + width * 0.004f, Paint().apply {
+            color = ACCENT
         })
 
-        val margin = width * 0.05f
-        var y = top + bandHeight * 0.26f
+        val condensed = loadCondensed(context)
+        val margin = width * 0.052f
+        var y = top + bandHeight * 0.30f
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1A1A1A")
-            textSize = width * 0.048f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            color = TEXT
+            textSize = width * 0.062f
+            typeface = condensed ?: Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         canvas.drawText(title, margin, y, titlePaint)
 
         val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#757575")
-            textSize = width * 0.030f
+            color = TEXT_3
+            textSize = width * 0.028f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            letterSpacing = 0.08f
         }
         y += bandHeight * 0.20f
         canvas.drawText(subtitle, margin, y, subPaint)
 
-        // 统计：一行四项，等宽排开
         if (stats.isNotEmpty()) {
-            y += bandHeight * 0.26f
+            y += bandHeight * 0.28f
             val slot = (width - margin * 2) / stats.size
             val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#9E9E9E")
+                color = TEXT_3
                 textSize = width * 0.026f
+                letterSpacing = 0.10f
             }
             val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#1A1A1A")
-                textSize = width * 0.042f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = AMBER
+                textSize = width * 0.055f
+                typeface = condensed ?: Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             }
             stats.forEachIndexed { index, (label, value) ->
                 val x = margin + slot * index
@@ -82,6 +99,9 @@ object ShareComposer {
 
         return output
     }
+
+    private fun loadCondensed(context: Context): Typeface? =
+        runCatching { ResourcesCompat.getFont(context, R.font.barlow_condensed_bold) }.getOrNull()
 
     fun writeToCache(context: Context, bitmap: Bitmap, fileName: String): android.net.Uri {
         val dir = File(context.cacheDir, "share").apply { mkdirs() }

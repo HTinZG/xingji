@@ -58,6 +58,7 @@ import com.llyytt.path.service.RecordingService
 import com.llyytt.path.service.RecordingStateHolder
 import com.llyytt.path.ui.XingjiTheme
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
 
 /**
  * 记录页。
@@ -81,6 +82,8 @@ fun RecordScreen(
 
     var message by remember { mutableStateOf<String?>(null) }
     var unfinished by remember { mutableStateOf<TripEntity?>(null) }
+    var showSaved by remember { mutableStateOf(false) }
+    var wasActive by remember { mutableStateOf(false) }
 
     fun startNow() {
         scope.launch {
@@ -105,6 +108,16 @@ fun RecordScreen(
         } else {
             message = "没有定位权限，无法记录"
         }
+    }
+
+    // 结束行程时闪一下 TRIP SAVED（GTA 的 WASTED 式转场）
+    LaunchedEffect(state.isActive) {
+        if (wasActive && !state.isActive && state.pointCount > 0) {
+            showSaved = true
+            kotlinx.coroutines.delay(1400)
+            showSaved = false
+        }
+        wasActive = state.isActive
     }
 
     // 首次进入时看看有没有「上次没结束的行程」
@@ -352,6 +365,40 @@ fun RecordScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(18.dp))
+            }
+        }
+    }
+
+
+    if (showSaved) {
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showSaved,
+            enter = androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.fadeOut(),
+        ) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.82f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "TRIP SAVED",
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 76.sp,
+                            lineHeight = 78.sp,
+                        ),
+                        color = palette.accent,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = "行程已保存",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White,
+                    )
+                }
             }
         }
     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,6 +42,10 @@ import com.llyytt.path.data.db.TransportMode
 import com.llyytt.path.data.db.TripSegmentEntity
 import com.llyytt.path.data.repo.TripDetail
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.sp
+import com.llyytt.path.ui.XingjiTheme
 
 /**
  * 分段编辑器：自动分段 + 三个手动操作。
@@ -265,32 +270,82 @@ private fun SegmentCard(
     onSplit: () -> Unit,
     onMerge: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "[${index + 1}] ${modeLabel(segment.mode)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = Fmt.duration(segmentDuration(points, segment.startPointSeq, segment.endPointSeq)),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+    val palette = XingjiTheme.palette
+    val duration = segmentDuration(points, segment.startPointSeq, segment.endPointSeq)
+    val distance = segmentDistance(points, segment.startPointSeq, segment.endPointSeq)
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(16.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "${segmentRangeText(segment)}  ·  " +
-                    Fmt.distance(segmentDistance(points, segment.startPointSeq, segment.endPointSeq)),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = "%02d".format(index + 1),
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp),
+                color = palette.textTertiary,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = onChangeMode, enabled = enabled) { Text("改方式") }
-                TextButton(onClick = onSplit, enabled = enabled && canSplit) { Text("拆分") }
-                TextButton(onClick = onMerge, enabled = enabled && canMerge) { Text("合并下段") }
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = modeLabel(segment.mode),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = "seq ${segment.startPointSeq}..${segment.endPointSeq} · ${Fmt.distance(distance)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.textTertiary,
+                )
             }
+
+            Text(
+                text = Fmt.duration(duration),
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 38.sp),
+                color = palette.amber,
+            )
         }
+
+        Spacer(Modifier.height(8.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+            SegmentAction("改方式", palette.accent, enabled) { onChangeMode() }
+            SegmentAction(
+                "拆分",
+                if (enabled && canSplit) palette.textTertiary else palette.hairline,
+                enabled && canSplit,
+            ) { onSplit() }
+            SegmentAction(
+                "合并下段",
+                if (enabled && canMerge) palette.textTertiary else palette.hairline,
+                enabled && canMerge,
+            ) { onMerge() }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(palette.hairline),
+        )
     }
+}
+
+@Composable
+private fun SegmentAction(
+    label: String,
+    color: androidx.compose.ui.graphics.Color,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium,
+        color = color,
+        modifier = Modifier
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(vertical = 6.dp),
+    )
 }
 
 private fun modeLabel(mode: TransportMode): String = when (mode) {

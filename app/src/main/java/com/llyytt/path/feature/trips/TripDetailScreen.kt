@@ -138,6 +138,7 @@ fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Uni
             }
             try {
                 val image = ShareComposer.compose(
+                    context = context,
                     map = map,
                     title = Fmt.dateTime(data.trip.startedAt),
                     subtitle = "行迹 · ${data.stats.pointCount} 个点 · ${data.segments.size} 段",
