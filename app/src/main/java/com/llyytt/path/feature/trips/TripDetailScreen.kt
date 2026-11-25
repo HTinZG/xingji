@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -223,6 +224,16 @@ fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Uni
 
     Box(modifier = Modifier.fillMaxSize()) {
         engine.MapView(controller = controller, modifier = Modifier.fillMaxSize())
+
+        // 浅色模式：高德默认浅色底图会把橙色轨迹淹没。
+        // 整图压一层深色蒙版，让橙色轨迹跳出来，与深色模式的"夜间仪表盘"气质对齐。
+        if (!isSystemInDarkTheme()) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0B0D10).copy(alpha = 0.35f)),
+            )
+        }
 
         // 顶部压一层暗色渐变，保证白色文字在浅色地图上也读得清
         androidx.compose.foundation.layout.Box(

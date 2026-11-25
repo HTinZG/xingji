@@ -1,5 +1,6 @@
 package com.llyytt.path.feature.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,11 +18,14 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
+import com.llyytt.path.ui.XingjiTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -96,6 +100,8 @@ fun SettingsScreen(
             is UrlValidator.Outcome.Http -> pendingHttpUrl = outcome.normalized
         }
     }
+
+    val palette = XingjiTheme.palette
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -212,17 +218,29 @@ fun SettingsScreen(
 
                     // 当前已保存了什么——不显示 Key 明文，只说"已保存"
                     val saved = config
+                    // 浅色模式下 surfaceVariant 是 #F1EFEA（脏灰），改成 panel 白底 + hairline 描边，
+                    // 与设计语言「细分割线代替卡片」一致；同时给一条橙色左边线作为"已保存"的视觉锚点。
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = palette.panel,
                         shape = MaterialTheme.shapes.medium,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, palette.hairline),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Text(
-                                text = "当前已保存",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier
+                                        .width(3.dp)
+                                        .height(14.dp)
+                                        .background(palette.accent),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "当前已保存",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = palette.accent,
+                                )
+                            }
                             Spacer(Modifier.height(6.dp))
                             if (saved == null || !saved.isReady) {
                                 Text(
@@ -263,25 +281,27 @@ fun SettingsScreen(
 
                     Spacer(Modifier.height(12.dp))
 
-                    OutlinedTextField(
+                    TextField(
                         value = baseUrl,
                         onValueChange = { baseUrl = it; status = null },
                         label = { Text("BaseURL") },
                         placeholder = { Text("https://api.openai.com/v1") },
                         singleLine = true,
+                        colors = hairlineTextFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
+                    TextField(
                         value = model,
                         onValueChange = { model = it; status = null },
                         label = { Text("模型名") },
                         placeholder = { Text("gpt-4o-mini") },
                         singleLine = true,
+                        colors = hairlineTextFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
+                    TextField(
                         value = keyInput,
                         onValueChange = { keyInput = it; status = null },
                         label = { Text("API Key") },
@@ -290,6 +310,7 @@ fun SettingsScreen(
                         },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
+                        colors = hairlineTextFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
 
@@ -336,4 +357,19 @@ fun SettingsScreen(
             },
         )
     }
+}
+
+@Composable
+private fun hairlineTextFieldColors(): androidx.compose.material3.TextFieldColors {
+    val palette = XingjiTheme.palette
+    return TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+        focusedIndicatorColor = palette.accent,
+        unfocusedIndicatorColor = palette.hairline,
+        focusedLabelColor = palette.accent,
+        unfocusedLabelColor = palette.textTertiary,
+        cursorColor = palette.accent,
+    )
 }

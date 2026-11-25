@@ -24,10 +24,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -212,12 +214,20 @@ fun AiChatScreen(onBack: () -> Unit, onOpenSettings: () -> Unit) {
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        OutlinedTextField(
+                        val palette = com.llyytt.path.ui.XingjiTheme.palette
+                        TextField(
                             value = input,
                             onValueChange = { input = it },
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("问点关于行程的问题") },
                             maxLines = 4,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = palette.accent,
+                                unfocusedIndicatorColor = palette.hairline,
+                                cursorColor = palette.accent,
+                            ),
                         )
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -284,6 +294,7 @@ private fun GuideContent(onOpenSettings: () -> Unit) {
 @Composable
 private fun MessageBubble(message: AiChatMessageEntity) {
     val isUser = message.role == ChatRole.USER
+    val palette = com.llyytt.path.ui.XingjiTheme.palette
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
@@ -291,16 +302,19 @@ private fun MessageBubble(message: AiChatMessageEntity) {
         Card(
             modifier = Modifier.widthIn(max = 300.dp),
             colors = CardDefaults.cardColors(
-                containerColor = if (isUser) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
+                // 用户气泡：实橙底 + 深色文字（浅色模式）/ 近黑文字（深色模式）。
+                // 之前的 primaryContainer 浅橙底 + 橙文字在浅色模式下发污。
+                containerColor = if (isUser) palette.accent else MaterialTheme.colorScheme.surfaceVariant,
             ),
         ) {
             Text(
                 text = message.content,
                 style = MaterialTheme.typography.bodyMedium,
+                color = if (isUser) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
                 modifier = Modifier.padding(12.dp),
             )
         }

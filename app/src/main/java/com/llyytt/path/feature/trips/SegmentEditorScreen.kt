@@ -119,14 +119,47 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                     contentAlignment = Alignment.Center,
                 ) {
+                    val palette = XingjiTheme.palette
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("还没有分段", style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(8.dp))
+                        // 空状态视觉锚点：三条长短不一的横线，暗示"将被切开的轨迹"
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Box(Modifier.width(72.dp).height(3.dp).background(palette.hairline))
+                            Box(Modifier.width(48.dp).height(3.dp).background(palette.accent))
+                            Box(Modifier.width(28.dp).height(3.dp).background(palette.hairline))
+                        }
+                        Spacer(Modifier.height(28.dp))
                         Text(
-                            "点右上角「自动分段」按速度和停顿自动切分。",
+                            "还没有分段",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "按速度和停顿，自动把这条行程切成\n走路 / 骑车 / 坐车 / 停留",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
+                        Spacer(Modifier.height(24.dp))
+                        // 主 CTA：直接给「自动分段」按钮，不用让用户去右上角找
+                        androidx.compose.material3.Button(
+                            onClick = { run { app.segmentRepository.autoSegment(tripId) } },
+                            enabled = !busy,
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = palette.accent,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                            modifier = Modifier.height(48.dp),
+                        ) {
+                            Text(
+                                "自动分段",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
                     }
                 }
 

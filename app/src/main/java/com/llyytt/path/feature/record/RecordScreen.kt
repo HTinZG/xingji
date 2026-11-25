@@ -43,6 +43,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
@@ -90,6 +92,8 @@ fun RecordScreen(
     var unfinished by remember { mutableStateOf<TripEntity?>(null) }
     var showSaved by remember { mutableStateOf(false) }
     var wasActive by remember { mutableStateOf(false) }
+    // 任务提示条：记录中只在状态切换时短暂显示 3 秒，避免常驻遮挡地图
+    var showMissionBar by remember { mutableStateOf(true) }
     // 停止时 state.pointCount 会被重置成 0，所以要提前记住「停之前有多少点」
     var lastActivePoints by remember { mutableIntStateOf(0) }
 
@@ -157,6 +161,15 @@ fun RecordScreen(
         if (showSaved) {
             kotlinx.coroutines.delay(2200)
             showSaved = false
+        }
+    }
+
+    // 任务提示条：状态切换时短暂显示 3 秒。空闲时一直显示，记录中让地图呼吸。
+    LaunchedEffect(state.isActive, state.status) {
+        showMissionBar = true
+        if (state.isActive) {
+            kotlinx.coroutines.delay(3000)
+            showMissionBar = false
         }
     }
 
@@ -355,10 +368,12 @@ fun RecordScreen(
 
                 Spacer(Modifier.weight(1f))
 
-                MissionBar(
-                    text = if (state.isActive) "任务进行中 · 保持定位开启" else "任务 · 记录下一段行程",
-                    palette = palette,
-                )
+                AnimatedVisibility(visible = showMissionBar) {
+                    MissionBar(
+                        text = if (state.isActive) "任务进行中 · 保持定位开启" else "任务 · 记录下一段行程",
+                        palette = palette,
+                    )
+                }
 
                 Spacer(Modifier.height(14.dp))
 
@@ -394,6 +409,9 @@ fun RecordScreen(
                         }
                     }
                 } else {
+                    // 浅色模式下 #E85D0F 在米白底上对比偏弱，给按钮一圈同色光晕把"开始记录"跳出来。
+                    // 深色模式不加——深色底上的橙色已经足够亮。
+                    val isDark = isSystemInDarkTheme()
                     Button(
                         onClick = {
                             val fine = ContextCompat.checkSelfPermission(
@@ -401,7 +419,15 @@ fun RecordScreen(
                             ) == PackageManager.PERMISSION_GRANTED
                             if (fine) startNow() else permissionLauncher.launch(requiredPermissions())
                         },
-                        modifier = Modifier.fillMaxWidth().height(66.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(66.dp)
+                            .shadow(
+                                elevation = if (isDark) 0.dp else 18.dp,
+                                shape = RoundedCornerShape(33.dp),
+                                ambientColor = palette.accent,
+                                spotColor = palette.accent,
+                            ),
                         shape = RoundedCornerShape(33.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = palette.accent,
