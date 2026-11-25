@@ -18,7 +18,15 @@ enum class TripStatus { RECORDING, PAUSED, FINISHED }
 enum class TransportMode { UNKNOWN, WALK, BIKE, CAR }
 
 /** 这个点是哪个定位源产出的。将来接入高德定位后，坐标变换可审计。 */
-enum class PointSource { GNSS, AMAP_LOCATION }
+/**
+ * 点的来源。
+ *
+ * NETWORK：系统网络定位（WiFi/基站）。只在还没拿到 GPS 点之前用来兜底——
+ * 室内 GPS 完全没信号，但网络定位能找到几十米量级的位置，
+ * 总比一个点都没有（用户以为"搜不到星"）强。
+ * 一旦拿到第一个 GPS 点就不再收网络点，避免精度污染轨迹。
+ */
+enum class PointSource { GNSS, NETWORK, AMAP_LOCATION }
 
 /**
  * 行程。

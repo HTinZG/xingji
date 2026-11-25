@@ -286,6 +286,13 @@ class RecordingService : Service() {
         val t = trip ?: return
         if (t.status != TripStatus.RECORDING) return
 
+        // 收到点就清掉之前的定位错误（比如用户去设置里把定位打开了），
+        // 否则界面上会一直挂着"定位没开"的红字。
+        if (lastError != null) {
+            lastError = null
+            publish()
+        }
+
         // 精度太差的点直接丢，不入库（不改善，只是不污染）
         if (fix.accuracyMeters > Tuning.Filter.MAX_ACCURACY_M) return
         val speed = fix.speedMps

@@ -1,8 +1,11 @@
 package com.llyytt.path.feature.record
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -182,7 +185,30 @@ fun RecordScreen(
                         text = describeError(err),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
                     )
+                    // 定位没开 / 没权限时，给一个能直接跳过去的按钮，
+                    // 而不是让用户自己去翻设置（很多人找不到在哪）。
+                    val providerIssue = err == LocationError.PROVIDER_DISABLED
+                    val permissionIssue = err == LocationError.PERMISSION_DENIED
+                    if (providerIssue || permissionIssue) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        TextButton(onClick = {
+                            val intent = if (providerIssue) {
+                                Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                            } else {
+                                Intent(
+                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.fromParts("package", context.packageName, null),
+                                )
+                            }
+                            runCatching {
+                                context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                            }
+                        }) {
+                            Text(if (providerIssue) "打开定位设置" else "打开应用权限")
+                        }
+                    }
                 }
             }
 
@@ -279,9 +305,9 @@ private fun requiredPermissions(): Array<String> = buildList {
 }.toTypedArray()
 
 private fun describeError(error: LocationError): String = when (error) {
-    LocationError.PERMISSION_DENIED -> "定位权限被拒绝，点「结束」后重新授权"
-    LocationError.PROVIDER_DISABLED -> "系统定位开关是关的，请打开定位"
-    LocationError.TIMEOUT -> "30 秒没拿到定位，可能是室内或没有信号"
+    LocationError.PERMISSION_DENIED -> "定位权限被拒绝。请到「设置 → 应用 → 行迹 → 权限」里改成「精确位置」。"
+    LocationError.PROVIDER_DISABLED -> "手机的定位总开关是关的。点下面的按钮打开，打开后会自动开始定位。"
+    LocationError.TIMEOUT -> "30 秒没拿到定位。请确认：① 定位已打开 ② 在室外或窗边（室内通常定不上）。"
     LocationError.UNKNOWN -> "定位失败"
 }
 

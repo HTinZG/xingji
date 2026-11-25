@@ -551,11 +551,40 @@ GitHub 只备份了**代码和文档**。还有两样东西不在里面，必须
 
 ---
 
+### 定位
+
+**#28 小米/HyperOS 上「定位总开关关着」查不出来**
+现象：定位明明是关的，App 却只显示「正在搜星…」，30 秒后提示「可能是室内或没有信号」。
+原因：LocationManager.isProviderEnabled(GPS_PROVIDER) 在部分机型上，即使定位总开关关闭也返回 	rue。
+解法：改用 LocationManager.isLocationEnabled（API 28+），它能正确反映总开关。
+超时提示也要复核一次总开关：关着就报 PROVIDER_DISABLED 而不是 TIMEOUT。
+
+**#29 只监听 GPS provider，室内永远是 0 个点**
+现象：在室内记录一小时，0 个点；用户以为「搜不到星」。
+原因：只 
+equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络定位（WiFi/基站）
+明明有坐标却完全没用上。
+解法：同时监听 NETWORK_PROVIDER，**只在拿到第一个 GPS 点之前**转发网络点
+（精度写 PointSource.NETWORK）。之后停用网络点，避免 30 米级误差污染轨迹和距离。
+
+**#30 修好后要不要用户自己重启行程**
+现象：提示了「定位没开」，用户去设置里打开，回来还是 0 点。
+原因：start() 发现前置条件不满足就直接返回，之后不再重试。
+解法：报错的同时每 3 秒重试一次；拿到点后清掉 lastError。
+用户无需手动「结束再开始」，回到 App 会自动接上。
+
+**#31 给错误提示配一个按钮**
+「定位总开关是关的」这句话，用户不一定知道去哪开。
+在错误下面直接给「打开定位设置」按钮（ACTION_LOCATION_SOURCE_SETTINGS），
+权限问题则给「打开应用权限」（ACTION_APPLICATION_DETAILS_SETTINGS）。
+
+---
+
 ## 附录 A：源码全文
 
 > 为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」，
 > 那时翻 GitHub 不如在本地文档里直接搜关键词快。
-> 源码本身以仓库为准，这里这份是**某一时刻的快照**（62 个文件 / 8028 行）。
+> 源码本身以仓库为准，这里这份是**某一时刻的快照**（62 个文件 / 8173 行）。
 > 改完代码后运行 `python tools/gen-handbook.py` 重新生成。
 
 网页版里每个文件都是折叠的，点标题展开。
@@ -585,21 +614,21 @@ GitHub 只备份了**代码和文档**。还有两样东西不在里面，必须
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/AiChatEntities.kt` | 54 | AI 聊天记录。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/AppDatabase.kt` | 83 | 1 -> 2 的开发期迁移：丢表重建（v1 从未对外发布，只有测试机有数据）。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/Daos.kt` | 152 | 进程被杀后重启时用它找回「没结束的行程」。最多一条（由业务层保证）。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/data/db/Entities.kt` | 185 | 行程状态。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/db/Entities.kt` | 193 | 行程状态。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/AiChatRepository.kt` | 29 | 聊天记录。只存本地，不进导出文件；清空数据时一起删。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/RecordingRepository.kt` | 139 | 开始记录的结果。已有未结束行程时不能悄悄再开一条。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/SegmentRepository.kt` | 163 | 分段的写操作。三个操作各自一个事务。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/TripRepository.kt` | 68 | 只读查询。写入仍然走 RecordingRepository，职责分开。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/settings/SettingsStore.kt` | 49 | 轻量设置存储。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/map/MapEngine.kt` | 83 | 离线能力分级。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingService.kt` | 522 | 记录前台服务。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingService.kt` | 529 | 记录前台服务。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingStateHolder.kt` | 48 | 记录页的实时状态。服务写，UI 读。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/ai/AiChatScreen.kt` | 309 | AI 聊天。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/mapdemo/MapDemoScreen.kt` | 185 | 天安门附近的一圈假轨迹，只用来验证“能画线”。第 3 步会换成真实记录。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/offline/OfflineInfoScreen.kt` | 123 | 离线地图说明页。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyGateScreen.kt` | 109 | 首启隐私门禁。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyPolicyScreen.kt` | 127 | 隐私说明页。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt` | 309 | 记录页。本步只做最小可用：开始 / 暂停 / 继续 / 结束 + 实时距离时长。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt` | 335 | 记录页。本步只做最小可用：开始 / 暂停 / 继续 / 结束 + 实时距离时长。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/settings/SettingsScreen.kt` | 340 | 设置页。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt` | 327 | 分段编辑器：自动分段 + 三个手动操作。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TrackPainter.kt` | 159 | 把轨迹点转成地图能画的折线。 |
@@ -607,7 +636,7 @@ GitHub 只备份了**代码和文档**。还有两样东西不在里面，必须
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripListScreen.kt` | 138 | — |
 | 主程序 | `app/src/main/java/com/llyytt/path/MainActivity.kt` | 104 | — |
 | 主程序 | `app/src/main/java/com/llyytt/path/XjApp.kt` | 82 | 全 App 唯一允许 import mapimpl 的地方。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/location/GnssLocationSource.kt` | 152 | 系统 GNSS 定位。MVP 唯一的定位实现。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/location/GnssLocationSource.kt` | 256 | 系统 GNSS 定位。MVP 唯一的定位实现。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/location/LocationSource.kt` | 52 | 定位失败原因。冷启动实测出问题时，靠它区分「没信号」还是「provider 没开」。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/mapimpl/amap/AMapEngine.kt` | 337 | 高德 3D 地图实现。整个 App 里唯一 import com.amap 的地方。 |
 | 单元测试 | `app/src/test/java/com/llyytt/path/core/export/TrackExporterTest.kt` | 130 | — |
@@ -2705,7 +2734,15 @@ enum class TripStatus { RECORDING, PAUSED, FINISHED }
 enum class TransportMode { UNKNOWN, WALK, BIKE, CAR }
 
 /** 这个点是哪个定位源产出的。将来接入高德定位后，坐标变换可审计。 */
-enum class PointSource { GNSS, AMAP_LOCATION }
+/**
+ * 点的来源。
+ *
+ * NETWORK：系统网络定位（WiFi/基站）。只在还没拿到 GPS 点之前用来兜底——
+ * 室内 GPS 完全没信号，但网络定位能找到几十米量级的位置，
+ * 总比一个点都没有（用户以为"搜不到星"）强。
+ * 一旦拿到第一个 GPS 点就不再收网络点，避免精度污染轨迹。
+ */
+enum class PointSource { GNSS, NETWORK, AMAP_LOCATION }
 
 /**
  * 行程。
@@ -3716,6 +3753,13 @@ class RecordingService : Service() {
     private suspend fun processFix(fix: LocationFix) {
         val t = trip ?: return
         if (t.status != TripStatus.RECORDING) return
+
+        // 收到点就清掉之前的定位错误（比如用户去设置里把定位打开了），
+        // 否则界面上会一直挂着"定位没开"的红字。
+        if (lastError != null) {
+            lastError = null
+            publish()
+        }
 
         // 精度太差的点直接丢，不入库（不改善，只是不污染）
         if (fix.accuracyMeters > Tuning.Filter.MAX_ACCURACY_M) return
@@ -4883,8 +4927,11 @@ private fun Section(title: String, body: String) {
 package com.llyytt.path.feature.record
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -5064,7 +5111,30 @@ fun RecordScreen(
                         text = describeError(err),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
                     )
+                    // 定位没开 / 没权限时，给一个能直接跳过去的按钮，
+                    // 而不是让用户自己去翻设置（很多人找不到在哪）。
+                    val providerIssue = err == LocationError.PROVIDER_DISABLED
+                    val permissionIssue = err == LocationError.PERMISSION_DENIED
+                    if (providerIssue || permissionIssue) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        TextButton(onClick = {
+                            val intent = if (providerIssue) {
+                                Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                            } else {
+                                Intent(
+                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.fromParts("package", context.packageName, null),
+                                )
+                            }
+                            runCatching {
+                                context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                            }
+                        }) {
+                            Text(if (providerIssue) "打开定位设置" else "打开应用权限")
+                        }
+                    }
                 }
             }
 
@@ -5161,9 +5231,9 @@ private fun requiredPermissions(): Array<String> = buildList {
 }.toTypedArray()
 
 private fun describeError(error: LocationError): String = when (error) {
-    LocationError.PERMISSION_DENIED -> "定位权限被拒绝，点「结束」后重新授权"
-    LocationError.PROVIDER_DISABLED -> "系统定位开关是关的，请打开定位"
-    LocationError.TIMEOUT -> "30 秒没拿到定位，可能是室内或没有信号"
+    LocationError.PERMISSION_DENIED -> "定位权限被拒绝。请到「设置 → 应用 → 行迹 → 权限」里改成「精确位置」。"
+    LocationError.PROVIDER_DISABLED -> "手机的定位总开关是关的。点下面的按钮打开，打开后会自动开始定位。"
+    LocationError.TIMEOUT -> "30 秒没拿到定位。请确认：① 定位已打开 ② 在室外或窗边（室内通常定不上）。"
     LocationError.UNKNOWN -> "定位失败"
 }
 
@@ -6837,6 +6907,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -6866,6 +6937,7 @@ class GnssLocationSource(context: Context) : LocationSource {
     private var onError: ((LocationError) -> Unit)? = null
     private var running = false
     private var gotAnyFix = false
+    private var gotGpsFix = false
     private var currentIntervalMs = 0L
 
     override val isRunning: Boolean
@@ -6874,6 +6946,7 @@ class GnssLocationSource(context: Context) : LocationSource {
     private val listener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
             gotAnyFix = true
+            if (location.provider == LocationManager.GPS_PROVIDER) gotGpsFix = true
             val fix = location.toFix()
             adaptInterval(location)
             onFix?.invoke(fix)
@@ -6884,14 +6957,63 @@ class GnssLocationSource(context: Context) : LocationSource {
         override fun onProviderEnabled(provider: String) = Unit
 
         override fun onProviderDisabled(provider: String) {
-            onError?.invoke(LocationError.PROVIDER_DISABLED)
-            stop()
+            // 只有 GPS 被关掉才算致命；网络定位被关不影响继续等 GPS。
+            if (provider == LocationManager.GPS_PROVIDER) {
+                onError?.invoke(LocationError.PROVIDER_DISABLED)
+                stop()
+            }
         }
+    }
+
+    /**
+     * 网络定位兜底。只在还没拿到任何 GPS 点之前转发。
+     *
+     * 为什么需要：室内 GPS 完全定不上，但系统网络定位通常能给出几十米精度的位置。
+     * 之前只监听 GPS，室内就是"永远 0 个点"，用户看到的是"搜不到星"。
+     * 为什么不一直用：网络定位精度 30~2000 米，一直混进来会把轨迹和距离算歪。
+     */
+    private val networkListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            if (gotGpsFix) return
+            if (location.accuracy > Tuning.Filter.MAX_ACCURACY_M) return
+            gotAnyFix = true
+            onFix?.invoke(location.toFix(source = PointSource.NETWORK))
+        }
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+
+        override fun onProviderEnabled(provider: String) = Unit
+
+        override fun onProviderDisabled(provider: String) = Unit
     }
 
     private val timeoutRunnable = Runnable {
         if (running && !gotAnyFix) {
-            onError?.invoke(LocationError.TIMEOUT)
+            // 超时的真实原因可能是两种，必须区分：
+            // - 系统定位总开关关着 → 用户需要去打开
+            // - 开着但没信号 → 用户需要去室外
+            // 报错说错了，用户会一直以为是"室内没信号"（实际踩过这个坑）。
+            onError?.invoke(
+                if (!isSystemLocationEnabled()) LocationError.PROVIDER_DISABLED
+                else LocationError.TIMEOUT,
+            )
+        }
+    }
+
+    /**
+     * 系统定位总开关是否打开。
+     *
+     * 注意：不能用 isProviderEnabled(GPS_PROVIDER) 判断。
+     * 在部分机型（实测小米/HyperOS）上，即使定位总开关关闭，
+     * isProviderEnabled 仍然返回 true —— 那样永远查不出"定位没开"。
+     */
+    private fun isSystemLocationEnabled(): Boolean {
+        val m = manager ?: return false
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            runCatching { m.isLocationEnabled }.getOrDefault(false)
+        } else {
+            @Suppress("DEPRECATION")
+            runCatching { m.isProviderEnabled(LocationManager.GPS_PROVIDER) }.getOrDefault(false)
         }
     }
 
@@ -6902,27 +7024,71 @@ class GnssLocationSource(context: Context) : LocationSource {
             onError(LocationError.UNKNOWN)
             return
         }
-        if (!hasPermission()) {
-            onError(LocationError.PERMISSION_DENIED)
-            return
-        }
-        if (!m.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            onError(LocationError.PROVIDER_DISABLED)
-            return
-        }
 
         this.onFix = onFix
         this.onError = onError
         this.gotAnyFix = false
+        this.gotGpsFix = false
         this.running = true
+
+        if (!begin(m)) {
+            // 定位没开 / 没权限：先报错，同时每 3 秒重试一次。
+            // 用户去设置里打开定位后回到 App，不用手动"结束再开始"，会自动接上。
+            handler.postDelayed(retryRunnable, RETRY_MS)
+            return
+        }
+        handler.postDelayed(timeoutRunnable, TIMEOUT_MS)
+    }
+
+    /** 真正开始采样。前置条件不满足时返回 false，并已通过 onError 报出原因。 */
+    private fun begin(m: LocationManager): Boolean {
+        if (!hasPermission()) {
+            onError?.invoke(LocationError.PERMISSION_DENIED)
+            return false
+        }
+        if (!isSystemLocationEnabled()) {
+            onError?.invoke(LocationError.PROVIDER_DISABLED)
+            return false
+        }
+        if (!m.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            onError?.invoke(LocationError.PROVIDER_DISABLED)
+            return false
+        }
 
         // 先给一个历史位置（如果有），让 UI 立刻有东西显示
         runCatching { m.getLastKnownLocation(LocationManager.GPS_PROVIDER) }
             .getOrNull()
-            ?.let { onFix(it.toFix()) }
+            ?.let { onFix?.invoke(it.toFix()) }
 
         requestUpdates(Tuning.Sampling.NORMAL_INTERVAL_MS)
-        handler.postDelayed(timeoutRunnable, TIMEOUT_MS)
+        requestNetworkUpdates(m)
+        return true
+    }
+
+    /** 网络定位兜底：拿不到 GPS 时至少有个粗略位置。不可用就静默跳过。 */
+    private fun requestNetworkUpdates(m: LocationManager) {
+        val provider = when {
+            runCatching { m.isProviderEnabled(LocationManager.NETWORK_PROVIDER) }.getOrDefault(false) ->
+                LocationManager.NETWORK_PROVIDER
+            else -> return
+        }
+        runCatching {
+            m.requestLocationUpdates(provider, NETWORK_INTERVAL_MS, 0f, networkListener, Looper.getMainLooper())
+        }
+    }
+
+    private val retryRunnable = object : Runnable {
+        override fun run() {
+            if (!running) return
+            val m = manager
+            if (m != null && begin(m)) {
+                gotAnyFix = false
+                handler.removeCallbacks(timeoutRunnable)
+                handler.postDelayed(timeoutRunnable, TIMEOUT_MS)
+            } else {
+                handler.postDelayed(this, RETRY_MS)
+            }
+        }
     }
 
     override fun stop() {
@@ -6930,7 +7096,9 @@ class GnssLocationSource(context: Context) : LocationSource {
         onFix = null
         onError = null
         handler.removeCallbacks(timeoutRunnable)
+        handler.removeCallbacks(retryRunnable)
         runCatching { manager?.removeUpdates(listener) }
+        runCatching { manager?.removeUpdates(networkListener) }
     }
 
     private fun adaptInterval(location: Location) {
@@ -6965,19 +7133,25 @@ class GnssLocationSource(context: Context) : LocationSource {
         ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
 
-    private fun Location.toFix(): LocationFix = LocationFix(
+    private fun Location.toFix(source: PointSource = PointSource.GNSS): LocationFix = LocationFix(
         point = Wgs84(latitude, longitude),
         timeMillis = time,
         accuracyMeters = if (hasAccuracy()) accuracy else -1f,
         speedMps = if (hasSpeed()) speed else null,
         bearingDeg = if (hasBearing()) bearing else null,
         altitudeM = if (hasAltitude()) altitude else null,
-        source = PointSource.GNSS,
+        source = source,
     )
 
     companion object {
         /** 超过这个时间还没有第一个点，就报 TIMEOUT */
         const val TIMEOUT_MS = 30_000L
+
+        /** 定位没开时的重试间隔 */
+        const val RETRY_MS = 3_000L
+
+        /** 网络定位的刷新间隔（粗定位，不需要太频繁） */
+        const val NETWORK_INTERVAL_MS = 10_000L
     }
 }
 ```
