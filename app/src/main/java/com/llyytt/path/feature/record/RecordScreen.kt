@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,6 +60,8 @@ import com.llyytt.path.service.RecordingStateHolder
 import com.llyytt.path.ui.XingjiTheme
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import com.llyytt.path.map.MapPolyline
 
 /**
  * 记录页。
@@ -75,6 +78,8 @@ fun RecordScreen(
     val context = LocalContext.current
     val app = context.applicationContext as XjApp
     val palette = XingjiTheme.palette
+    val engine = remember { app.mapEngine() }
+    val controller = remember { engine.createController() }
     // 设置开关：默认关。关着的时候这一块完全不渲染
     val showSpeed = app.settings.showInstantSpeed
     val state by RecordingStateHolder.state.collectAsState()
@@ -84,6 +89,8 @@ fun RecordScreen(
     var unfinished by remember { mutableStateOf<TripEntity?>(null) }
     var showSaved by remember { mutableStateOf(false) }
     var wasActive by remember { mutableStateOf(false) }
+    // 停止时 state.pointCount 会被重置成 0，所以要提前记住「停之前有多少点」
+    var lastActivePoints by remember { mutableIntStateOf(0) }
 
     fun startNow() {
         scope.launch {
@@ -110,9 +117,34 @@ fun RecordScreen(
         }
     }
 
+    // 实时轨迹：点变了才重画；地图跟着最新点走
+    LaunchedEffect(state.liveTrack.size, state.tripId, state.isActive) {
+        val pts = state.liveTrack
+        if (pts.size >= 2) {
+            controller.renderTrack(
+                listOf(
+                    com.llyytt.path.map.MapPolyline(
+                        id = "live",
+                        points = pts,
+                        colorArgb = palette.accent.toArgb(),
+                        widthDp = 7f,
+                    ),
+                ),
+            )
+        }
+        pts.lastOrNull()?.let {
+            controller.renderCursor(it)
+            if (state.isActive) controller.moveCameraTo(it, 17f)
+        }
+    }
+
+    LaunchedEffect(state.isActive, state.pointCount) {
+        if (state.isActive) lastActivePoints = state.pointCount
+    }
+
     // 结束行程时闪一下 TRIP SAVED（GTA 的 WASTED 式转场）
     LaunchedEffect(state.isActive) {
-        if (wasActive && !state.isActive && state.pointCount > 0) {
+        if (wasActive && !state.isActive && lastActivePoints > 0) {
             showSaved = true
             kotlinx.coroutines.delay(1400)
             showSaved = false
@@ -129,171 +161,157 @@ fun RecordScreen(
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // 顶部「日落天空」：GTA 式的暖色渐变，只在顶部一带
+            // 地图占满整屏：记录时最重要的是「我在哪、走过哪」
+            engine.MapView(controller = controller, modifier = Modifier.fillMaxSize())
+
+            // 顶部压一层暗色渐变，保证文字在浅色地图上也读得清
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(340.dp)
-                    .background(Brush.verticalGradient(listOf(palette.skyTop, palette.skyBottom))),
+                    .height(430.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Black.copy(alpha = 0.60f), Color.Transparent),
+                        ),
+                    ),
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 20.dp),
             ) {
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
 
-                // 顶栏：品牌点 + 入口
+                // 顶栏
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(9.dp).background(palette.accent, CircleShape))
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = "XINGJI",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = Color.White,
                     )
                     Spacer(Modifier.weight(1f))
-                    NavAction("行程", onOpenTrips)
-                    NavAction("设置", onOpenSettings)
-                    NavAction("AI", onOpenAi)
+                    NavAction("行程", Color.White.copy(alpha = 0.85f), onOpenTrips)
+                    NavAction("设置", Color.White.copy(alpha = 0.85f), onOpenSettings)
+                    NavAction("AI", Color.White.copy(alpha = 0.85f), onOpenAi)
                 }
 
-                Spacer(Modifier.height(34.dp))
+                Spacer(Modifier.height(12.dp))
 
-                // HUD 状态行
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // HUD 状态 + 瞬时速度
+                Surface(color = Color(0xCC161A20), shape = RoundedCornerShape(12.dp)) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Box(
                         Modifier
                             .size(7.dp)
-                            .background(
-                                if (state.isActive) palette.accent else palette.textTertiary,
-                                CircleShape,
-                            ),
+                            .background(if (state.isActive) palette.accent else Color.White.copy(alpha = 0.5f), CircleShape),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = hudStatus(state.status, state.isActive),
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (state.isActive) palette.amber else palette.textTertiary,
+                        color = if (state.isActive) palette.amber else Color.White.copy(alpha = 0.75f),
                     )
-                }
-
-                Spacer(Modifier.height(18.dp))
-
-                // 主数字：超大 + 斜体 + 单位基线对齐
-                val (num, unit) = splitDistance(state.distanceMeters)
-                Row {
-                    Text(
-                        text = num,
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontStyle = FontStyle.Italic,
-                            fontSize = 132.sp,
-                            lineHeight = 120.sp,
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.alignByBaseline(),
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = unit,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = palette.textTertiary,
-                        modifier = Modifier.alignByBaseline(),
-                    )
-                }
-
-                Spacer(Modifier.height(2.dp))
-
-                Text(
-                    text = formatDuration(state.activeMillis),
-                    style = MaterialTheme.typography.displayMedium.copy(
-                        fontSize = 72.sp,
-                        lineHeight = 76.sp,
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-
-                // 瞬时速度：设置里打开才显示。没有样本时显示「等待定位」，不显示 0.0
-                if (state.isActive && showSpeed) {
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        text = when {
-                            state.isStationary -> "静止"
-                            state.speedMps != null -> Fmt.speed(state.speedMps!!)
-                            else -> "等待定位"
-                        },
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = if (state.isStationary) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            palette.accent
-                        },
-                    )
-                }
-
-                Spacer(Modifier.height(28.dp))
-
-                // 数据行：点数 / 精度（速度开启时多一列）
-                Row(modifier = Modifier.fillMaxWidth()) {
                     if (state.isActive && showSpeed) {
-                        HudStat("速度", state.speedMps?.let { Fmt.speed(it) } ?: "—", palette)
+                        Spacer(Modifier.width(14.dp))
+                        Text(
+                            text = when {
+                                state.isStationary -> "静止"
+                                state.speedMps != null -> Fmt.speed(state.speedMps!!)
+                                else -> "等待定位"
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            color = palette.amber,
+                        )
                     }
-                    HudStat("点数", "${state.pointCount}", palette)
-                    HudStat(
-                        "精度",
-                        state.lastAccuracyM?.let { "±${it.toInt()}m" } ?: "—",
-                        palette,
-                    )
                 }
+                }
+
+                // 紧凑数据卡：文字退居次要，把画面让给地图
+                Surface(
+                    color = Color(0xE6161A20),
+                    shape = RoundedCornerShape(18.dp),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        val (num, unit) = splitDistance(state.distanceMeters)
+                        MiniStat("距离", num, unit, palette.accent)
+                        MiniStat("时长", formatDuration(state.activeMillis), "", Color.White)
+                        MiniStat("点数", "${state.pointCount}", "", Color.White)
+                        MiniStat(
+                            "精度",
+                            state.lastAccuracyM?.let { "±${it.toInt()}" } ?: "—",
+                            if (state.lastAccuracyM != null) "m" else "",
+                            Color.White,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
 
                 if (state.isActive && state.status == TripStatus.RECORDING && !state.hasFirstFix) {
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         text = "正在搜星…（首次定位可能要几十秒）",
                         style = MaterialTheme.typography.bodySmall,
-                        color = palette.textTertiary,
+                        color = Color.White.copy(alpha = 0.75f),
                     )
                 }
 
                 state.lastError?.let { err ->
-                    Spacer(Modifier.height(14.dp))
-                    Text(
-                        text = describeError(err),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    val providerIssue = err == LocationError.PROVIDER_DISABLED
-                    val permissionIssue = err == LocationError.PERMISSION_DENIED
-                    if (providerIssue || permissionIssue) {
-                        TextButton(
-                            onClick = {
-                                val intent = if (providerIssue) {
-                                    Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                                } else {
-                                    Intent(
-                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.fromParts("package", context.packageName, null),
+                    Spacer(Modifier.height(10.dp))
+                    Surface(
+                        color = palette.panel.copy(alpha = 0.94f),
+                        shape = RoundedCornerShape(14.dp),
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = describeError(err),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            val providerIssue = err == LocationError.PROVIDER_DISABLED
+                            val permissionIssue = err == LocationError.PERMISSION_DENIED
+                            if (providerIssue || permissionIssue) {
+                                TextButton(
+                                    onClick = {
+                                        val intent = if (providerIssue) {
+                                            Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                                        } else {
+                                            Intent(
+                                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                Uri.fromParts("package", context.packageName, null),
+                                            )
+                                        }
+                                        runCatching {
+                                            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                        }
+                                    },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                                ) {
+                                    Text(
+                                        text = if (providerIssue) "打开定位设置" else "打开应用权限",
+                                        color = palette.accent,
+                                        style = MaterialTheme.typography.labelMedium,
                                     )
                                 }
-                                runCatching {
-                                    context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                                }
-                            },
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                        ) {
-                            Text(
-                                text = if (providerIssue) "打开定位设置" else "打开应用权限",
-                                color = palette.accent,
-                                style = MaterialTheme.typography.labelMedium,
-                            )
+                            }
                         }
                     }
                 }
 
                 message?.let {
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodySmall,
@@ -303,7 +321,6 @@ fun RecordScreen(
 
                 Spacer(Modifier.weight(1f))
 
-                // 任务提示条：GTA 的任务行
                 MissionBar(
                     text = if (state.isActive) "任务进行中 · 保持定位开启" else "任务 · 记录下一段行程",
                     palette = palette,
@@ -323,6 +340,7 @@ fun RecordScreen(
                             },
                             modifier = Modifier.weight(1f).height(60.dp),
                             shape = RoundedCornerShape(30.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                         ) {
                             Text(
                                 text = if (state.status == TripStatus.RECORDING) "暂停" else "继续",
@@ -333,6 +351,10 @@ fun RecordScreen(
                             onClick = { RecordingService.stop(context) },
                             modifier = Modifier.weight(1f).height(60.dp),
                             shape = RoundedCornerShape(30.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = palette.accent,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
                         ) {
                             Text("结束", style = MaterialTheme.typography.titleMedium)
                         }
@@ -345,8 +367,8 @@ fun RecordScreen(
                             ) == PackageManager.PERMISSION_GRANTED
                             if (fine) startNow() else permissionLauncher.launch(requiredPermissions())
                         },
-                        modifier = Modifier.fillMaxWidth().height(68.dp),
-                        shape = RoundedCornerShape(34.dp),
+                        modifier = Modifier.fillMaxWidth().height(66.dp),
+                        shape = RoundedCornerShape(33.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = palette.accent,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -356,19 +378,19 @@ fun RecordScreen(
                     }
                 }
 
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    text = "离线：仅底图缓存，弱网可看部分区域",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = palette.textTertiary,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(12.dp))
+                Surface(color = Color(0xCC161A20), shape = RoundedCornerShape(10.dp)) {
+                    Text(
+                        text = "离线：仅底图缓存，弱网可看部分区域",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
-
 
     if (showSaved) {
         androidx.compose.animation.AnimatedVisibility(
@@ -432,7 +454,46 @@ fun RecordScreen(
 }
 
 @Composable
-private fun NavAction(label: String, onClick: () -> Unit) {
+private fun MiniStat(
+    label: String,
+    value: String,
+    unit: String,
+    valueColor: androidx.compose.ui.graphics.Color,
+) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.55f),
+        )
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 30.sp),
+                color = valueColor,
+            )
+            if (unit.isNotEmpty()) {
+                Spacer(Modifier.width(2.dp))
+                Text(
+                    text = unit,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.55f),
+                    modifier = Modifier.padding(bottom = 3.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NavAction(label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+    TextButton(onClick = onClick, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp)) {
+        Text(text = label, style = MaterialTheme.typography.labelMedium, color = color)
+    }
+}
+
+@Composable
+private fun NavActionOld(label: String, onClick: () -> Unit) {
     TextButton(onClick = onClick, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp)) {
         Text(
             text = label,
@@ -464,7 +525,7 @@ private fun MissionBar(text: String, palette: com.llyytt.path.ui.XingjiPalette) 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
+            .background(Color(0xE6161A20), RoundedCornerShape(6.dp))
             .padding(vertical = 10.dp, horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

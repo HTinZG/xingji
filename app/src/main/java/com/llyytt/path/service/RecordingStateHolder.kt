@@ -1,5 +1,6 @@
 package com.llyytt.path.service
 
+import com.llyytt.path.core.geo.Wgs84
 import com.llyytt.path.data.db.TripStatus
 import com.llyytt.path.location.LocationError
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,11 @@ data class RecordingUiState(
     val speedMps: Double? = null,
     /** 速度持续低于阈值超过 5 秒 */
     val isStationary: Boolean = false,
+    /**
+     * 本次行程已经记录的点，用于记录页画实时轨迹。
+     * 只保留最近若干点（服务层截断），够画图即可，不是全量。
+     */
+    val liveTrack: List<Wgs84> = emptyList(),
 ) {
     val isActive: Boolean
         get() = status == TripStatus.RECORDING || status == TripStatus.PAUSED

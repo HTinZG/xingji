@@ -66,6 +66,9 @@ class RecordingService : Service() {
     private var lastPoint: TrackPointEntity? = null
     private var distance = 0.0
     private var pointCount = 0
+
+    /** 记录页画实时轨迹用；只保留最近 LIVE_TRACK_MAX 个点 */
+    private val liveTrack = mutableListOf<Wgs84>()
     private var pauses: List<Pair<Long, Long?>> = emptyList()
 
     private var pendingNewSegment = true
@@ -330,6 +333,8 @@ class RecordingService : Service() {
         nextSeq = seq + 1
         lastPoint = entity
         pointCount += 1
+        liveTrack.add(fix.point)
+        if (liveTrack.size > LIVE_TRACK_MAX) liveTrack.removeAt(0)
         distance += add
         pendingNewSegment = false
         lastError = null
@@ -397,6 +402,7 @@ class RecordingService : Service() {
                 pointCount = pointCount,
                 lastAccuracyM = lastPoint?.accuracyM,
                 lastError = lastError,
+                liveTrack = liveTrack.toList(),
                 hasFirstFix = firstFixStored,
                 speedMps = currentSpeedMps,
                 isStationary = isStationary,
@@ -468,6 +474,7 @@ class RecordingService : Service() {
     private fun stopSelfSafely() {
         stopTicker()
         location?.stop()
+        liveTrack.clear()
         RecordingStateHolder.reset()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -493,6 +500,9 @@ class RecordingService : Service() {
 
         /** 超过这个「年龄」的点视为缓存点，不入库 */
         private const val STALE_FIX_MS = 10_000L
+
+    /** 记录页实时轨迹最多保留的点数，避免长行程把内存和渲染拖垮 */
+    private const val LIVE_TRACK_MAX = 4000
 
         /** 看门狗：5 秒内没 adopt 就报错 */
         private const val WATCHDOG_MS = 5_000L
