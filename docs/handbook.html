@@ -47,7 +47,7 @@ table.srctable td:nth-child(2) { word-break: break-all; }
 </head>
 <body><div class="wrap">
 <h1 id="s1">行迹 · 项目手册</h1>
-<blockquote>最后更新：2026-11-16 这份文档写给「三个月后的自己」——那时你会忘记为什么某个版本号被钉死、为什么某个开关不能开。 每个坑都记了<strong>现象 / 原因 / 解法</strong>，照着查就能少走一遍弯路。</blockquote>
+<blockquote>最后更新：2026-11-25 这份文档写给「三个月后的自己」——那时你会忘记为什么某个版本号被钉死、为什么某个开关不能开。 每个坑都记了<strong>现象 / 原因 / 解法</strong>，照着查就能少走一遍弯路。</blockquote>
 <hr>
 <h2 id="s2">0. 这是什么</h2>
 <p>一个<strong>纯本地</strong>的 Android 出行轨迹记录 App。</p>
@@ -61,6 +61,7 @@ table.srctable td:nth-child(2) { word-break: break-all; }
 <h2 id="s3">1. 现在能做什么</h2>
 <table><thead><tr><th>功能</th><th>状态</th><th>说明</th></tr></thead><tbody>
 <tr><td>手动开始 / 暂停 / 结束记录</td><td>✅</td><td>锁屏后靠前台服务继续记录</td></tr>
+<tr><td>记录页实时地图</td><td>✅</td><td>地图占满整屏，实时画轨迹 + 跟随光标</td></tr>
 <tr><td>轨迹按速度或交通方式着色</td><td>✅</td><td>可在详情页切换</td></tr>
 <tr><td>行程列表</td><td>✅</td><td>显示距离、时长、点数、断点数</td></tr>
 <tr><td>行程详情</td><td>✅</td><td>地图 + 统计 + 滑块回放</td></tr>
@@ -71,7 +72,8 @@ table.srctable td:nth-child(2) { word-break: break-all; }
 <tr><td>AI 聊天</td><td>✅</td><td>用户自带 API Key，OpenAI 兼容</td></tr>
 <tr><td>AI 配置查看 / 清除</td><td>✅</td><td>设置页显示已存配置，可一键清除</td></tr>
 <tr><td>导出 GPX 1.1 / KML 2.2</td><td>✅</td><td>WGS84，可直接拖进 Google Earth</td></tr>
-<tr><td>分享图</td><td>✅</td><td>只含地图 + 统计带，不截屏</td></tr>
+<tr><td>分享图</td><td>✅</td><td>只含地图 + 统计带，不截屏；深色底 + 橙色强调</td></tr>
+<tr><td>结束提示</td><td>✅</td><td>结束行程时页面内提示「行程已保存」，2.2 秒淡出</td></tr>
 <tr><td>隐私说明页</td><td>✅</td><td>七节，写清楚数据去哪了</td></tr>
 </tbody></table>
 <h3 id="s4">明确不做（不是忘了，是想清楚了不做）</h3>
@@ -313,25 +315,34 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p>解法：空格写成 <code>%s</code>。</p>
 <p><strong>#27 命令行坐标点不准，点击总落空</strong></p>
 <p>解法：<code>uiautomator dump</code> 拿到控件的精确 <code>bounds</code>，取中心点再点，不要靠肉眼估。</p>
+<p><strong>#33 记录页实时轨迹把内存吃满</strong></p>
+<p>现象：长行程时记录页越用越卡。</p>
+<p>原因：把全部轨迹点塞进 UI 状态里逐点重绘。</p>
+<p>解法：状态里只保留最近 4000 个点（<code>LIVE_TRACK_MAX</code>），并且只在点数变化时重画。</p>
+<p><strong>#34 加了自定义字体后中文变方块？</strong></p>
+<p>现象：担心 Barlow Condensed 没有中文字形。</p>
+<p>实际：Android 会按字符回落，中文自动用系统字体渲染，不用做任何处理。</p>
+<p>代价只有 APK 增大（四个字重约 430 KB）。</p>
 <hr>
 <h2 id="s27">8. 测试清单状态</h2>
 <blockquote>完整版见 <code>docs/step9-test-checklist.md</code></blockquote>
 <h3 id="s28">阻塞项</h3>
 <table><thead><tr><th>项</th><th>状态</th></tr></thead><tbody>
-<tr><td>澎湃 OS 五设置后户外 1 小时不中断</td><td>⬜ <strong>待你出门实测</strong></td></tr>
+<tr><td>澎湃 OS 五设置后户外 1 小时不中断</td><td>⬜ <strong>待你出门实测（唯一还没绿的一条）</strong></td></tr>
 <tr><td>进程被杀后恢复</td><td>✅ 已验证（自动结束旧行程并提示）</td></tr>
 <tr><td>拆分中途校验失败全回滚</td><td>✅ 已验证（3 段数据逐字段一致）</td></tr>
 </tbody></table>
-<h3 id="s29">已验证的关键指标</h3>
+<h3 id="s29">已验证的内容</h3>
 <table><thead><tr><th>项</th><th>结果</th></tr></thead><tbody>
 <tr><td>单测</td><td>65 个，0 失败</td></tr>
 <tr><td>16KB 页对齐</td><td>4 个 .so 全部 16384</td></tr>
 <tr><td>导出坐标偏移</td><td>0.055 米（纯 6 位小数舍入误差）</td></tr>
-<tr><td>APK 体积</td><td>44.30 MB（其中高德 .so 占 32.9 MB）</td></tr>
-<tr><td>冷启动首次定位</td><td>8398 ms</td></tr>
-<tr><td>签名</td><td>CN=Xingji，v2 scheme</td></tr>
+<tr><td>签名</td><td>CN=Xingji，v2 scheme，SHA1 A4:41:AD:…</td></tr>
+<tr><td>高德鉴权</td><td>release 包无 authErrLog</td></tr>
+<tr><td>APK 体积</td><td>44.5 MB（高德 .so 占 32.9 MB，字体约 0.43 MB）</td></tr>
+<tr><td>定位异常</td><td>定位关闭 / 室内无星 两种情况均能正确提示并自动恢复</td></tr>
+<tr><td>记录页地图</td><td>实时轨迹 + 光标跟随，实测可用</td></tr>
 </tbody></table>
-<hr>
 <h2 id="s30">9. 已知限制与技术债</h2>
 <table><thead><tr><th>项</th><th>说明</th><th>优先级</th></tr></thead><tbody>
 <tr><td>户外长时记录未验证</td><td>唯一没绿的阻塞项</td><td>高</td></tr>
@@ -341,6 +352,8 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <tr><td>停留时段内的点不进轨迹线</td><td>只留一个 <code>&lt;wpt&gt;</code>，符合 GPX 惯例但信息有损</td><td>低</td></tr>
 <tr><td>分享图只有竖版</td><td>跟随屏幕宽度</td><td>低</td></tr>
 <tr><td>无&quot;导出全部行程&quot;</td><td>只能一条一条导</td><td>低</td></tr>
+<tr><td>记录页地图常驻</td><td>一进 App 就初始化高德地图，冷启动会慢一点；未开始记录时其实可以不建</td><td>低</td></tr>
+<tr><td>分享图未做过真机截图验证</td><td>release 包读不到 cache，要验得装 debug 包</td><td>低</td></tr>
 </tbody></table>
 <hr>
 <h2 id="s31">10. 商业化与合规（别忘）</h2>
@@ -381,6 +394,9 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <tr><td>AI 请求怎么发</td><td><code>data/ai/AiClient.kt</code></td></tr>
 <tr><td>数据库表结构</td><td><code>data/db/Entities.kt</code></td></tr>
 <tr><td>页面跳转</td><td><code>MainActivity.kt</code></td></tr>
+<tr><td>配色 / 字号 / 字体</td><td><code>ui/Theme.kt</code></td></tr>
+<tr><td>记录页布局（地图 + 数据卡）</td><td><code>feature/record/RecordScreen.kt</code></td></tr>
+<tr><td>列表 / 详情 / 分段的样式</td><td><code>feature/trips/TripListScreen.kt</code> 等</td></tr>
 <tr><td>依赖版本</td><td><code>app/build.gradle.kts</code></td></tr>
 <tr><td>混淆规则</td><td><code>app/proguard-rules.pro</code></td></tr>
 </tbody></table>
@@ -458,10 +474,38 @@ git push</code></pre>
 <p>解法：不要在 SurfaceView 上方做全屏覆盖层。改成页面内的小提示（放在正常的 Compose 布局流里），</p>
 <p>2.2 秒后自动隐藏。既没有图层冲突，也不会挡地图。</p>
 <hr>
-<h2 id="s44">附录 A：源码全文</h2>
+<hr>
+<h2 id="s44">14. 视觉系统（要改配色/字号从这里入手）</h2>
+<p>设计定位：<strong>夜间城市仪表盘</strong> —— 底子极暗、信息极少、数字极大，只留一种橙色的光。</p>
+<p>参考 Apple 的克制 + GTA5 的街头感。完整方案见 <code>docs/design-proposal.md</code>，</p>
+<p>效果图在 <code>docs/design/</code>。</p>
+<h3 id="s45">唯一入口：<code>ui/Theme.kt</code></h3>
+<table><thead><tr><th>想改什么</th><th>改哪里</th></tr></thead><tbody>
+<tr><td>主色（日落橙）</td><td><code>DarkPalette.accent</code> / <code>LightPalette.accent</code></td></tr>
+<tr><td>背景、面板、分割线</td><td>同名 token</td></tr>
+<tr><td>明暗两套色</td><td><code>DarkPalette</code> / <code>LightPalette</code> + <code>DarkScheme</code> / <code>LightScheme</code></td></tr>
+<tr><td>字号、字距</td><td><code>XingjiTypography</code></td></tr>
+<tr><td>数字用的窄体字</td><td><code>CondensedFamily</code>（<code>res/font/barlow_condensed_*.ttf</code>）</td></tr>
+</tbody></table>
+<h3 id="s46">三条硬规矩</h3>
+<ol>
+<li><strong>不要直接写死颜色</strong>，一律走 <code>MaterialTheme.colorScheme.*</code> 或 <code>XingjiTheme.palette.*</code>，</li>
+</ol>
+<p>否则明暗切换时会有一半是死的。</p>
+<ol>
+<li><strong>盖在地图上的元素必须固定用深色</strong>（如 <code>Color(0xE6161A20)</code>），不能跟随主题 ——</li>
+</ol>
+<p>地图本身是浅色的，浅色模式下用主题色会变成白底白字。</p>
+<ol>
+<li><strong>不要在 SurfaceView（地图）上方做全屏覆盖层</strong>，原因见踩坑 #32。</li>
+</ol>
+<hr>
+<hr>
+<hr>
+<h2 id="s47">附录 A：源码全文</h2>
 <blockquote>为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」， 那时翻 GitHub 不如在本地文档里直接搜关键词快。 源码本身以仓库为准，这里这份是<strong>某一时刻的快照</strong>（63 个文件 / 8923 行）。 改完代码后运行 <code>python tools/gen-handbook.py</code> 重新生成。</blockquote>
 <p>网页版里每个文件都是折叠的，点标题展开。</p>
-<h3 id="s45">目录</h3>
+<h3 id="s48">目录</h3>
 <table class="srctable"><thead><tr><th>分组</th><th>文件</th><th>行数</th><th>说明</th></tr></thead><tbody>
 <tr><td>主程序</td><td><code>app/src/main/java/com/llyytt/path/core/export/ExportModels.kt</code></td><td>58</td><td>导出用的扁平模型。</td></tr>
 <tr><td>主程序</td><td><code>app/src/main/java/com/llyytt/path/core/export/ShareComposer.kt</code></td><td>125</td><td>分享图合成。</td></tr>
@@ -527,7 +571,7 @@ git push</code></pre>
 <tr><td>构建与配置</td><td><code>settings.gradle.kts</code></td><td>25</td><td>工程与仓库配置</td></tr>
 <tr><td>构建与配置</td><td><code>tools/Check-16Kb.ps1</code></td><td>181</td><td>16KB 页对齐检查脚本</td></tr>
 </tbody></table>
-<h3 id="s46">主程序</h3>
+<h3 id="s49">主程序</h3>
 <details class="src"><summary><span class="fpath">app/src/main/java/com/llyytt/path/core/export/ExportModels.kt</span></summary><pre><code>package com.llyytt.path.core.export
 
 import com.llyytt.path.data.db.TransportMode
@@ -7941,7 +7985,7 @@ fun XingjiTheme(
         )
     }
 }</code></pre></details>
-<h3 id="s47">单元测试</h3>
+<h3 id="s50">单元测试</h3>
 <details class="src"><summary><span class="fpath">app/src/test/java/com/llyytt/path/core/export/TrackExporterTest.kt</span></summary><pre><code>package com.llyytt.path.core.export
 
 import com.llyytt.path.data.db.TransportMode
@@ -8855,7 +8899,7 @@ class TripInvariantsTest {
         ).contains(&quot;ENDED_AT_MISSING&quot;))
     }
 }</code></pre></details>
-<h3 id="s48">构建与配置</h3>
+<h3 id="s51">构建与配置</h3>
 <details class="src"><summary><span class="fpath">app/build.gradle.kts</span></summary><pre><code>import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
