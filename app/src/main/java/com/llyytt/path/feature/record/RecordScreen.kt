@@ -8,6 +8,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -142,14 +143,21 @@ fun RecordScreen(
         if (state.isActive) lastActivePoints = state.pointCount
     }
 
-    // 结束行程时闪一下 TRIP SAVED（GTA 的 WASTED 式转场）
+    // 结束行程时在页面内提示「行程已保存」。
+    // 注意：不要做成覆盖全屏的遮罩层——记录页底下是地图（SurfaceView），
+    // 遮罩移除后那块区域不会重绘，屏幕上会一直留着残影（实测踩过）。
     LaunchedEffect(state.isActive) {
         if (wasActive && !state.isActive && lastActivePoints > 0) {
             showSaved = true
-            kotlinx.coroutines.delay(1400)
-            showSaved = false
         }
         wasActive = state.isActive
+    }
+
+    LaunchedEffect(showSaved) {
+        if (showSaved) {
+            kotlinx.coroutines.delay(2200)
+            showSaved = false
+        }
     }
 
     // 首次进入时看看有没有「上次没结束的行程」
@@ -319,6 +327,32 @@ fun RecordScreen(
                     )
                 }
 
+                AnimatedVisibility(visible = showSaved) {
+                    Surface(
+                        color = Color(0xE6161A20),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "✓",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = palette.accent,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "行程已保存",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White,
+                            )
+                        }
+                    }
+                }
+
+
                 Spacer(Modifier.weight(1f))
 
                 MissionBar(
@@ -392,38 +426,6 @@ fun RecordScreen(
         }
     }
 
-    if (showSaved) {
-        androidx.compose.animation.AnimatedVisibility(
-            visible = showSaved,
-            enter = androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.fadeOut(),
-        ) {
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.82f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "TRIP SAVED",
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontStyle = FontStyle.Italic,
-                            fontSize = 76.sp,
-                            lineHeight = 78.sp,
-                        ),
-                        color = palette.accent,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        text = "行程已保存",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.White,
-                    )
-                }
-            }
-        }
-    }
 
     // 未结束行程：只给两个出口，绝不「悄悄再开一条」
     val pending = unfinished
