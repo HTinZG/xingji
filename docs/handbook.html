@@ -324,6 +324,26 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p>现象：担心 Barlow Condensed 没有中文字形。</p>
 <p>实际：Android 会按字符回落，中文自动用系统字体渲染，不用做任何处理。</p>
 <p>代价只有 APK 增大（四个字重约 430 KB）。</p>
+<p><strong>#35 记录 51 分钟只有 1 个点：省电策略「智能限制后台运行」</strong></p>
+<p>现象：11-26 早上的行程显示 51:21，但只有 1 个点、0 米；同时 App 里「后台运行检查」显示未加白名单。</p>
+<p>排查：</p>
+<ol>
+<li><code>adb shell cmd appops get com.llyytt.path</code> 看 <code>MONITOR_LOCATION</code> 的 duration，只有 <code>+6s131ms</code> —— 定位总共只开了 6 秒；</li>
+<li><code>adb shell dumpsys deviceidle whitelist</code> 里没有本应用；</li>
+<li>崩溃日志为空 —— 不是崩溃，是被静默冻结。</li>
+</ol>
+<p>真因：<strong>行迹的省电策略是「智能限制后台运行」</strong>。这个档位明确写着限制「后台联网、定位、传感器使用、CPU 占用」，</p>
+<p>前台服务也照杀。AOSP 的「电池优化白名单」是另一个开关，两个都要动。</p>
+<p>验证：改成「无限制」后，开始记录并锁屏 3 分钟，日志持续输出</p>
+<p><code>heartbeat points=1..7</code> 与 <code>POINT_STORED seq=0..7</code> —— 服务一直活着。</p>
+<p>改动：</p>
+<ol>
+<li>设置页加「后台运行设置」，未加白名单时直接跳系统申请页（HyperOS 会打开「电量详情」，省电策略就在那）；</li>
+<li><code>RecordingUiState</code> 加 <code>lastFixAt</code>，记录页 90 秒无新点时红条提示「定位已中断 N 分钟」；</li>
+<li><code>finish()</code> 的结束时间改用<strong>最后一个点的时间</strong>（相差 &gt;2 分钟时），不再按当前时间收尾，避免虚报时长；</li>
+<li>恢复对话框写明「最后一次定位在几点、已经断了多久」。</li>
+</ol>
+<p>教训：<strong>时长 ≠ 还在记录</strong>。计时器按 <code>startedAt</code> 走，服务死了它照样跑。判断是否还活着要看「最后一个点多新」。</p>
 <hr>
 <h2 id="s27">8. 测试清单状态</h2>
 <blockquote>完整版见 <code>docs/step9-test-checklist.md</code></blockquote>
@@ -500,6 +520,7 @@ git push</code></pre>
 <ol>
 <li><strong>不要在 SurfaceView（地图）上方做全屏覆盖层</strong>，原因见踩坑 #32。</li>
 </ol>
+<hr>
 <hr>
 <hr>
 <hr>
