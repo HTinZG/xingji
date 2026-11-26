@@ -60,6 +60,14 @@ interface TrackPointDao {
     @Query("SELECT * FROM track_point WHERE tripId = :tripId ORDER BY seq ASC")
     suspend fun getByTrip(tripId: Long): List<TrackPointEntity>
 
+    /**
+     * 一次取出多条行程的所有点。
+     * 列表页以前是「每条行程查一次」，50 条行程就是 50 次查询，
+     * 而且每次都把全部点读进内存——行程一多就明显卡。
+     */
+    @Query("SELECT * FROM track_point WHERE tripId IN (:tripIds) ORDER BY tripId, seq")
+    suspend fun getByTrips(tripIds: List<Long>): List<TrackPointEntity>
+
     @Query("SELECT * FROM track_point WHERE tripId = :tripId ORDER BY seq ASC")
     fun observeByTrip(tripId: Long): Flow<List<TrackPointEntity>>
 
@@ -100,6 +108,9 @@ interface TripSegmentDao {
     @Query("SELECT COUNT(*) FROM trip_segment WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: Long): Int
 
+    @Query("SELECT tripId, COUNT(*) AS count FROM trip_segment WHERE tripId IN (:tripIds) GROUP BY tripId")
+    suspend fun countByTrips(tripIds: List<Long>): List<TripIdCount>
+
     @Query("SELECT * FROM trip_segment WHERE tripId = :tripId ORDER BY seq ASC")
     fun observeByTrip(tripId: Long): Flow<List<TripSegmentEntity>>
 
@@ -122,6 +133,9 @@ interface StayPointDao {
     @Query("SELECT COUNT(*) FROM stay_point WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: Long): Int
 
+    @Query("SELECT tripId, COUNT(*) AS count FROM stay_point WHERE tripId IN (:tripIds) GROUP BY tripId")
+    suspend fun countByTrips(tripIds: List<Long>): List<TripIdCount>
+
     @Query("SELECT * FROM stay_point WHERE tripId = :tripId ORDER BY arriveAt ASC")
     fun observeByTrip(tripId: Long): Flow<List<StayPointEntity>>
 
@@ -142,6 +156,9 @@ interface TripPauseDao {
     @Query("SELECT * FROM trip_pause WHERE tripId = :tripId ORDER BY pausedAt ASC")
     suspend fun getByTrip(tripId: Long): List<TripPauseEntity>
 
+    @Query("SELECT * FROM trip_pause WHERE tripId IN (:tripIds)")
+    suspend fun getByTrips(tripIds: List<Long>): List<TripPauseEntity>
+
     /** 把所有未闭合的暂停一起闭合（修复脏状态用） */
     @Query("UPDATE trip_pause SET resumedAt = :resumedAt WHERE tripId = :tripId AND resumedAt IS NULL")
     suspend fun closeAllOpen(tripId: Long, resumedAt: Long)
@@ -149,3 +166,9 @@ interface TripPauseDao {
     @Query("DELETE FROM trip_pause WHERE tripId = :tripId")
     suspend fun deleteByTrip(tripId: Long)
 }
+
+/** 批量统计用的投影：某条行程有多少行。 */
+data class TripIdCount(
+    val tripId: Long,
+    val count: Int,
+)

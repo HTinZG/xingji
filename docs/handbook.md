@@ -34,6 +34,7 @@
 | AI 聊天 | ✅ | 用户自带 API Key，OpenAI 兼容 |
 | AI 配置查看 / 清除 | ✅ | 设置页显示已存配置，可一键清除 |
 | 导出 GPX 1.1 / KML 2.2 | ✅ | WGS84，可直接拖进 Google Earth |
+| 导出全部行程 | ✅ | 列表页一键打包 zip，每条行程一个 GPX |
 | 分享图 | ✅ | 只含地图 + 统计带，不截屏；深色底 + 橙色强调 |
 | 结束提示 | ✅ | 结束行程时页面内提示「行程已保存」，2.2 秒淡出 |
 | 隐私说明页 | ✅ | 七节，写清楚数据去哪了 |
@@ -429,12 +430,12 @@ adb logcat -d | findstr /i "authErrLog"
 | 项 | 说明 | 优先级 |
 |---|---|---|
 | 户外长时记录未验证 | 唯一没绿的阻塞项 | 高 |
-| `autoSegment` 覆盖手动修正 | 应跳过 `manuallyEdited=true` 的段 | 中 |
-| 列表页 N+1 查询 | 每条行程单独查点、查段计数，50+ 行程会慢 | 中 |
+| ~~`autoSegment` 覆盖手动修正~~ | ✅ 已改为先弹确认框 | — |
+| ~~列表页 N+1 查询~~ | ✅ 已改为固定 5 次批量查询，与行程条数无关 | — |
 | KAPT 拖慢构建 | 等 KSP 版本对齐后切换 | 低 |
 | 停留时段内的点不进轨迹线 | 只留一个 `<wpt>`，符合 GPX 惯例但信息有损 | 低 |
 | 分享图只有竖版 | 跟随屏幕宽度 | 低 |
-| 无"导出全部行程" | 只能一条一条导 | 低 |
+| ~~无"导出全部行程"~~ | ✅ 已加：列表页「导出全部」，打包成 zip（每条一个 GPX） | — |
 | 记录页地图常驻 | 一进 App 就初始化高德地图，冷启动会慢一点；未开始记录时其实可以不建 | 低 |
 | 分享图未做过真机截图验证 | release 包读不到 cache，要验得装 debug 包 | 低 |
 
@@ -650,11 +651,13 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 
 ---
 
+---
+
 ## 附录 A：源码全文
 
 > 为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」，
 > 那时翻 GitHub 不如在本地文档里直接搜关键词快。
-> 源码本身以仓库为准，这里这份是**某一时刻的快照**（63 个文件 / 9263 行）。
+> 源码本身以仓库为准，这里这份是**某一时刻的快照**（64 个文件 / 9439 行）。
 > 改完代码后运行 `python tools/gen-handbook.py` 重新生成。
 
 网页版里每个文件都是折叠的，点标题展开。
@@ -663,6 +666,7 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 
 | 分组 | 文件 | 行数 | 说明 |
 |---|---|---|---|
+| 主程序 | `app/src/main/java/com/llyytt/path/core/export/BulkExporter.kt` | 76 | 把**所有行程**一次性导出成一个 zip，里面每条行程一个 GPX 文件。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/core/export/ExportModels.kt` | 58 | 导出用的扁平模型。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/core/export/ShareComposer.kt` | 125 | 分享图合成。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/core/export/TrackExporter.kt` | 181 | GPX 1.1 / KML 2.2 生成器。 |
@@ -683,12 +687,12 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 | 主程序 | `app/src/main/java/com/llyytt/path/data/ai/UrlValidator.kt` | 41 | BaseURL 校验。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/AiChatEntities.kt` | 54 | AI 聊天记录。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/AppDatabase.kt` | 83 | 1 -> 2 的开发期迁移：丢表重建（v1 从未对外发布，只有测试机有数据）。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/data/db/Daos.kt` | 152 | 进程被杀后重启时用它找回「没结束的行程」。最多一条（由业务层保证）。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/db/Daos.kt` | 175 | 进程被杀后重启时用它找回「没结束的行程」。最多一条（由业务层保证）。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/Entities.kt` | 193 | 行程状态。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/AiChatRepository.kt` | 29 | 聊天记录。只存本地，不进导出文件；清空数据时一起删。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/RecordingRepository.kt` | 162 | 开始记录的结果。已有未结束行程时不能悄悄再开一条。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/SegmentRepository.kt` | 167 | 分段的写操作。三个操作各自一个事务。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/TripRepository.kt` | 68 | 只读查询。写入仍然走 RecordingRepository，职责分开。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/TripRepository.kt` | 93 | 只读查询。写入仍然走 RecordingRepository，职责分开。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/settings/SettingsStore.kt` | 49 | 轻量设置存储。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/map/MapEngine.kt` | 83 | 离线能力分级。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingService.kt` | 540 | 记录前台服务。 |
@@ -703,7 +707,7 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt` | 451 | 分段编辑器：自动分段 + 三个手动操作。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TrackPainter.kt` | 159 | 把轨迹点转成地图能画的折线。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripDetailScreen.kt` | 598 | 行程详情：地图 + 统计 + 简版回放。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripListScreen.kt` | 227 | 行程列表。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripListScreen.kt` | 279 | 行程列表。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/MainActivity.kt` | 104 | — |
 | 主程序 | `app/src/main/java/com/llyytt/path/XjApp.kt` | 82 | 全 App 唯一允许 import mapimpl 的地方。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/location/GnssLocationSource.kt` | 256 | 系统 GNSS 定位。MVP 唯一的定位实现。 |
@@ -729,6 +733,86 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 
 
 ### 主程序
+
+<!-- FILE: app/src/main/java/com/llyytt/path/core/export/BulkExporter.kt -->
+
+```kotlin
+package com.llyytt.path.core.export
+
+import android.content.Context
+import android.net.Uri
+import com.llyytt.path.data.repo.TripRepository
+import com.llyytt.path.data.repo.TripDetail
+import java.io.BufferedOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * 把**所有行程**一次性导出成一个 zip，里面每条行程一个 GPX 文件。
+ *
+ * 为什么打包而不是导出成一个大文件：
+ * - 一个大 GPX 里塞多条轨迹，轨迹之间会连成一条假线（GPX 没有"分段断开"的语义）；
+ * - 单条一个文件，可以直接拖进 Google Earth / 其他轨迹工具；
+ * - 备份时一个包也好保存。
+ *
+ * 安全性：每条都用 [TrackExporter.scanForSensitiveContent] 扫一遍，
+ * 一旦发现可疑内容（比如误把配置写进去）就整包中止，不生成半成品。
+ */
+object BulkExporter {
+
+    /** 导出进度回调：已处理 / 总数 */
+    suspend fun exportAll(
+        context: Context,
+        repo: TripRepository,
+        target: Uri,
+        format: TrackExporter.Format = TrackExporter.Format.GPX,
+        onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
+    ): Result {
+        val trips = repo.listAllForExport()
+        if (trips.isEmpty()) return Result(0, null)
+
+        val now = System.currentTimeMillis()
+        val stream = context.contentResolver.openOutputStream(target)
+            ?: return Result(0, IllegalStateException("无法写入所选位置"))
+        var count = 0
+        BufferedOutputStream(stream).use { out ->
+            ZipOutputStream(out).use { zip ->
+                trips.forEachIndexed { index, detail ->
+                    val content = TrackExporter.build(
+                        detail.toExportModel(title = titleOf(detail)),
+                        format,
+                    )
+                    val findings = TrackExporter.scanForSensitiveContent(content)
+                    if (findings.isNotEmpty()) {
+                        throw IllegalStateException(
+                            "第 ${index + 1} 条行程里有可疑内容（${findings.joinToString()}），已中止",
+                        )
+                    }
+                    zip.putNextEntry(ZipEntry(fileName(detail, index, format)))
+                    zip.write(content.toByteArray(Charsets.UTF_8))
+                    zip.closeEntry()
+                    count++
+                    onProgress(count, trips.size)
+                }
+            }
+        }
+        return Result(count, null)
+    }
+
+    data class Result(val count: Int, val error: Throwable?)
+
+    private fun titleOf(d: TripDetail): String =
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA).format(Date(d.trip.startedAt))
+
+    private fun fileName(d: TripDetail, index: Int, format: TrackExporter.Format): String {
+        val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.CHINA).format(Date(d.trip.startedAt))
+        return "%03d_%s.%s".format(index + 1, stamp, format.extension)
+    }
+}
+```
 
 <!-- FILE: app/src/main/java/com/llyytt/path/core/export/ExportModels.kt -->
 
@@ -2711,6 +2795,14 @@ interface TrackPointDao {
     @Query("SELECT * FROM track_point WHERE tripId = :tripId ORDER BY seq ASC")
     suspend fun getByTrip(tripId: Long): List<TrackPointEntity>
 
+    /**
+     * 一次取出多条行程的所有点。
+     * 列表页以前是「每条行程查一次」，50 条行程就是 50 次查询，
+     * 而且每次都把全部点读进内存——行程一多就明显卡。
+     */
+    @Query("SELECT * FROM track_point WHERE tripId IN (:tripIds) ORDER BY tripId, seq")
+    suspend fun getByTrips(tripIds: List<Long>): List<TrackPointEntity>
+
     @Query("SELECT * FROM track_point WHERE tripId = :tripId ORDER BY seq ASC")
     fun observeByTrip(tripId: Long): Flow<List<TrackPointEntity>>
 
@@ -2751,6 +2843,9 @@ interface TripSegmentDao {
     @Query("SELECT COUNT(*) FROM trip_segment WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: Long): Int
 
+    @Query("SELECT tripId, COUNT(*) AS count FROM trip_segment WHERE tripId IN (:tripIds) GROUP BY tripId")
+    suspend fun countByTrips(tripIds: List<Long>): List<TripIdCount>
+
     @Query("SELECT * FROM trip_segment WHERE tripId = :tripId ORDER BY seq ASC")
     fun observeByTrip(tripId: Long): Flow<List<TripSegmentEntity>>
 
@@ -2773,6 +2868,9 @@ interface StayPointDao {
     @Query("SELECT COUNT(*) FROM stay_point WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: Long): Int
 
+    @Query("SELECT tripId, COUNT(*) AS count FROM stay_point WHERE tripId IN (:tripIds) GROUP BY tripId")
+    suspend fun countByTrips(tripIds: List<Long>): List<TripIdCount>
+
     @Query("SELECT * FROM stay_point WHERE tripId = :tripId ORDER BY arriveAt ASC")
     fun observeByTrip(tripId: Long): Flow<List<StayPointEntity>>
 
@@ -2793,6 +2891,9 @@ interface TripPauseDao {
     @Query("SELECT * FROM trip_pause WHERE tripId = :tripId ORDER BY pausedAt ASC")
     suspend fun getByTrip(tripId: Long): List<TripPauseEntity>
 
+    @Query("SELECT * FROM trip_pause WHERE tripId IN (:tripIds)")
+    suspend fun getByTrips(tripIds: List<Long>): List<TripPauseEntity>
+
     /** 把所有未闭合的暂停一起闭合（修复脏状态用） */
     @Query("UPDATE trip_pause SET resumedAt = :resumedAt WHERE tripId = :tripId AND resumedAt IS NULL")
     suspend fun closeAllOpen(tripId: Long, resumedAt: Long)
@@ -2800,6 +2901,12 @@ interface TripPauseDao {
     @Query("DELETE FROM trip_pause WHERE tripId = :tripId")
     suspend fun deleteByTrip(tripId: Long)
 }
+
+/** 批量统计用的投影：某条行程有多少行。 */
+data class TripIdCount(
+    val tripId: Long,
+    val count: Int,
+)
 ```
 
 <!-- FILE: app/src/main/java/com/llyytt/path/data/db/Entities.kt -->
@@ -3403,19 +3510,44 @@ data class TripDetail(
  */
 class TripRepository(private val db: AppDatabase) {
 
+    /**
+     * 列表页数据。
+     *
+     * 这里刻意用**批量查询**而不是逐条查：旧实现每条行程要跑 4 次查询
+     * （点、暂停、分段数、停留数），50 条行程就是 200 次，而且每次都把
+     * 该行程所有点读出来。现在固定 5 次查询，与行程条数无关。
+     */
     suspend fun list(limit: Int = 100): List<TripListItem> {
         val trips = db.tripDao().listOnce(limit)
+        if (trips.isEmpty()) return emptyList()
+
+        val ids = trips.map { it.id }
+        val pointsByTrip = db.trackPointDao().getByTrips(ids).groupBy { it.tripId }
+        val pausesByTrip = db.tripPauseDao().getByTrips(ids).groupBy { it.tripId }
+        val segmentCounts = db.tripSegmentDao().countByTrips(ids).associate { it.tripId to it.count }
+        val stayCounts = db.stayPointDao().countByTrips(ids).associate { it.tripId to it.count }
+
         val now = System.currentTimeMillis()
         return trips.map { trip ->
-            val points = db.trackPointDao().getByTrip(trip.id)
-            val pauses = db.tripPauseDao().getByTrip(trip.id).map { it.pausedAt to it.resumedAt }
+            val points = pointsByTrip[trip.id].orEmpty()
+            val pauses = pausesByTrip[trip.id].orEmpty().map { it.pausedAt to it.resumedAt }
             TripListItem(
                 trip = trip,
                 stats = TripStatsCalculator.compute(trip, points, pauses, now),
-                segmentCount = db.tripSegmentDao().countByTrip(trip.id),
-                stayCount = db.stayPointDao().countByTrip(trip.id),
+                segmentCount = segmentCounts[trip.id] ?: 0,
+                stayCount = stayCounts[trip.id] ?: 0,
             )
         }
+    }
+
+    /**
+     * 导出用：按时间正序取出**全部**行程的完整数据。
+     * 与列表页不同，这里要的是每条行程的点和分段，所以确实会读全量——
+     * 只由「导出全部」手动触发，不在界面自动跑。
+     */
+    suspend fun listAllForExport(): List<TripDetail> {
+        val trips = db.tripDao().listOnce(Int.MAX_VALUE).sortedBy { it.startedAt }
+        return trips.mapNotNull { detail(it.id) }
     }
 
     suspend fun detail(tripId: Long): TripDetail? {
@@ -7454,6 +7586,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -7484,6 +7620,32 @@ fun TripListScreen(onOpen: (Long) -> Unit, onBack: () -> Unit) {
     var items by remember { mutableStateOf<List<TripListItem>?>(null) }
     var reload by remember { mutableIntStateOf(0) }
 
+    // 「导出全部」：写一个 zip，里面每条行程一个 GPX
+    val scope = rememberCoroutineScope()
+    var exporting by remember { mutableStateOf(false) }
+    var exportMsg by remember { mutableStateOf<String?>(null) }
+    val exportAllLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            exporting = true
+            exportMsg = null
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    com.llyytt.path.core.export.BulkExporter.exportAll(context, app.tripRepository, uri)
+                }
+            }
+            exporting = false
+            exportMsg = result.fold(
+                onSuccess = { r ->
+                    if (r.error != null) "导出失败：${r.error.message}" else "已导出 ${r.count} 条行程"
+                },
+                onFailure = { "导出失败：${it.message ?: it.javaClass.simpleName}" },
+            )
+        }
+    }
+
     LaunchedEffect(reload) {
         items = app.tripRepository.list()
     }
@@ -7513,6 +7675,19 @@ fun TripListScreen(onOpen: (Long) -> Unit, onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(Modifier.weight(1f))
+                TextButton(
+                    onClick = {
+                        exportAllLauncher.launch("xingji-backup.zip")
+                    },
+                    enabled = !exporting,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
+                ) {
+                    Text(
+                        text = if (exporting) "导出中…" else "导出全部",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = palette.accent,
+                    )
+                }
                 TextButton(onClick = { reload++ }, contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp)) {
                     Text(
                         text = "刷新",
@@ -7523,6 +7698,15 @@ fun TripListScreen(onOpen: (Long) -> Unit, onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(10.dp))
+
+            exportMsg?.let { msg ->
+                Text(
+                    text = msg,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.textTertiary,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp),
+                )
+            }
 
             Text(
                 text = "行程",

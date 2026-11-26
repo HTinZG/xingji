@@ -26,6 +26,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,6 +60,32 @@ fun TripListScreen(onOpen: (Long) -> Unit, onBack: () -> Unit) {
     var items by remember { mutableStateOf<List<TripListItem>?>(null) }
     var reload by remember { mutableIntStateOf(0) }
 
+    // 「导出全部」：写一个 zip，里面每条行程一个 GPX
+    val scope = rememberCoroutineScope()
+    var exporting by remember { mutableStateOf(false) }
+    var exportMsg by remember { mutableStateOf<String?>(null) }
+    val exportAllLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            exporting = true
+            exportMsg = null
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    com.llyytt.path.core.export.BulkExporter.exportAll(context, app.tripRepository, uri)
+                }
+            }
+            exporting = false
+            exportMsg = result.fold(
+                onSuccess = { r ->
+                    if (r.error != null) "导出失败：${r.error.message}" else "已导出 ${r.count} 条行程"
+                },
+                onFailure = { "导出失败：${it.message ?: it.javaClass.simpleName}" },
+            )
+        }
+    }
+
     LaunchedEffect(reload) {
         items = app.tripRepository.list()
     }
@@ -85,6 +115,19 @@ fun TripListScreen(onOpen: (Long) -> Unit, onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(Modifier.weight(1f))
+                TextButton(
+                    onClick = {
+                        exportAllLauncher.launch("xingji-backup.zip")
+                    },
+                    enabled = !exporting,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
+                ) {
+                    Text(
+                        text = if (exporting) "导出中…" else "导出全部",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = palette.accent,
+                    )
+                }
                 TextButton(onClick = { reload++ }, contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp)) {
                     Text(
                         text = "刷新",
@@ -95,6 +138,15 @@ fun TripListScreen(onOpen: (Long) -> Unit, onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(10.dp))
+
+            exportMsg?.let { msg ->
+                Text(
+                    text = msg,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.textTertiary,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp),
+                )
+            }
 
             Text(
                 text = "行程",
