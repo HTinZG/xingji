@@ -648,11 +648,13 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 
 ---
 
+---
+
 ## 附录 A：源码全文
 
 > 为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」，
 > 那时翻 GitHub 不如在本地文档里直接搜关键词快。
-> 源码本身以仓库为准，这里这份是**某一时刻的快照**（63 个文件 / 9153 行）。
+> 源码本身以仓库为准，这里这份是**某一时刻的快照**（63 个文件 / 9263 行）。
 > 改完代码后运行 `python tools/gen-handbook.py` 重新生成。
 
 网页版里每个文件都是折叠的，点标题展开。
@@ -684,8 +686,8 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/Daos.kt` | 152 | 进程被杀后重启时用它找回「没结束的行程」。最多一条（由业务层保证）。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/db/Entities.kt` | 193 | 行程状态。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/AiChatRepository.kt` | 29 | 聊天记录。只存本地，不进导出文件；清空数据时一起删。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/RecordingRepository.kt` | 139 | 开始记录的结果。已有未结束行程时不能悄悄再开一条。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/SegmentRepository.kt` | 163 | 分段的写操作。三个操作各自一个事务。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/RecordingRepository.kt` | 162 | 开始记录的结果。已有未结束行程时不能悄悄再开一条。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/data/repo/SegmentRepository.kt` | 167 | 分段的写操作。三个操作各自一个事务。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/TripRepository.kt` | 68 | 只读查询。写入仍然走 RecordingRepository，职责分开。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/settings/SettingsStore.kt` | 49 | 轻量设置存储。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/map/MapEngine.kt` | 83 | 离线能力分级。 |
@@ -696,9 +698,9 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/offline/OfflineInfoScreen.kt` | 123 | 离线地图说明页。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyGateScreen.kt` | 109 | 首启隐私门禁。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyPolicyScreen.kt` | 127 | 隐私说明页。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt` | 650 | 记录页。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/settings/SettingsScreen.kt` | 423 | 设置页。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt` | 415 | 分段编辑器：自动分段 + 三个手动操作。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt` | 674 | 记录页。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/settings/SettingsScreen.kt` | 444 | 设置页。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt` | 451 | 分段编辑器：自动分段 + 三个手动操作。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TrackPainter.kt` | 159 | 把轨迹点转成地图能画的折线。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripDetailScreen.kt` | 598 | 行程详情：地图 + 统计 + 简版回放。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripListScreen.kt` | 227 | 行程列表。 |
@@ -717,7 +719,7 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 | 单元测试 | `app/src/test/java/com/llyytt/path/core/rules/TripInvariantsTest.kt` | 137 | — |
 | 构建与配置 | `app/build.gradle.kts` | 184 | 模块构建脚本：依赖、签名、R8 |
 | 构建与配置 | `app/proguard-rules.pro` | 39 | R8 混淆/保留规则 |
-| 构建与配置 | `app/src/main/AndroidManifest.xml` | 65 | 权限、组件、高德 Key 占位符 |
+| 构建与配置 | `app/src/main/AndroidManifest.xml` | 67 | 权限、组件、高德 Key 占位符 |
 | 构建与配置 | `app/src/main/res/xml/file_paths.xml` | 6 | FileProvider 暴露的目录 |
 | 构建与配置 | `app/src/main/res/xml/network_security_config.xml` | 20 | 允许用户配置的 http 接口 |
 | 构建与配置 | `build.gradle.kts` | 6 | 根构建脚本 |
@@ -3104,17 +3106,35 @@ class RecordingRepository(private val db: AppDatabase) {
         }
     }
 
+    /**
+     * 结束行程。
+     *
+     * 关键：**结束时间取「最后一个轨迹点的时间」，而不是当前时间**（相差超过 2 分钟时）。
+     * 因为 App 可能在中途被系统冻结/强停，而行程一直挂着「记录中」，
+     * 用户过半小时才回来点结束——按当前时间收尾就会凭空多出半小时的"时长"，
+     * 而这段时间一个点都没有。宁可时长短一点，也不要假数据。
+     */
     suspend fun finish(tripId: Long) = mutex.withLock {
         db.withTransaction {
             val now = System.currentTimeMillis()
-            db.tripPauseDao().closeAllOpen(tripId, now)
+            val lastPointAt = db.trackPointDao().lastPoint(tripId)?.recordedAt
+            val endedAt = if (lastPointAt != null && lastPointAt > 0 && now - lastPointAt > SILENT_GAP_MS) {
+                lastPointAt
+            } else {
+                now
+            }
+            db.tripPauseDao().closeAllOpen(tripId, endedAt)
             db.tripDao().findById(tripId)?.let {
                 db.tripDao().update(
-                    it.copy(status = TripStatus.FINISHED, endedAt = now, updatedAt = now),
+                    it.copy(status = TripStatus.FINISHED, endedAt = endedAt, updatedAt = now),
                 )
             }
         }
     }
+
+    /** 最后一次定位的时间；没有点返回 null。 */
+    suspend fun lastPointAt(tripId: Long): Long? =
+        db.trackPointDao().lastPoint(tripId)?.recordedAt
 
     /** 记一个点。seq 由调用方保证递增（服务里是单协程串行写入）。 */
     suspend fun insertPoint(
@@ -3170,6 +3190,11 @@ class RecordingRepository(private val db: AppDatabase) {
             db.tripDao().deleteAll()
         }
     }
+
+    private companion object {
+        /** 最后一个点与当前时间差超过这个值，就认为中途已经断了 */
+        const val SILENT_GAP_MS = 120_000L
+    }
 }
 ```
 
@@ -3198,6 +3223,10 @@ import com.llyytt.path.data.db.TripSegmentEntity
 class SegmentRepository(private val db: AppDatabase) {
 
     /** 跑一次自动分段并覆盖旧结果。返回段数。 */
+    /** 这条行程是否被手动改过（改方式/拆分/合并）。自动分段会覆盖这些修改，调用前先问。 */
+    suspend fun hasManualEdits(tripId: Long): Boolean =
+        db.tripSegmentDao().getByTrip(tripId).any { it.manuallyEdited }
+
     suspend fun autoSegment(tripId: Long): Int = db.withTransaction {
         val points = db.trackPointDao().getByTrip(tripId)
         val result = Segmenter.run(points)
@@ -5144,6 +5173,8 @@ fun RecordScreen(
 
     var message by remember { mutableStateOf<String?>(null) }
     var unfinished by remember { mutableStateOf<TripEntity?>(null) }
+    // 未结束行程的最后一个点时间，用来在对话框里说清楚「断了多久」
+    var lastFixAt by remember { mutableStateOf<Long?>(null) }
     var showSaved by remember { mutableStateOf(false) }
     // 每秒跳一次的时钟：用来算「距离上次成功定位过了多久」
     var nowTick by remember { mutableLongStateOf(0L) }
@@ -5239,7 +5270,9 @@ fun RecordScreen(
     // 首次进入时看看有没有「上次没结束的行程」
     LaunchedEffect(Unit) {
         if (!state.isActive) {
-            unfinished = app.recordingRepository.unfinished()
+            val t = app.recordingRepository.unfinished()
+            unfinished = t
+            lastFixAt = t?.let { app.recordingRepository.lastPointAt(it.id) }
         }
     }
 
@@ -5549,7 +5582,27 @@ fun RecordScreen(
             onDismissRequest = { unfinished = null },
             title = { Text("有一条没结束的行程") },
             text = {
-                Text("开始于 ${formatTime(pending.startedAt)}，状态 ${statusText(pending.status)}。要继续它，还是结束它？")
+                val lastAt = pending.endedAt ?: lastFixAt
+                Column {
+                    Text("开始于 ${formatTime(pending.startedAt)}，状态 ${statusText(pending.status)}。")
+                    if (lastAt != null && lastAt > 0L) {
+                        Spacer(Modifier.height(8.dp))
+                        val mins = ((System.currentTimeMillis() - lastAt) / 60_000L).coerceAtLeast(0L)
+                        Text(
+                            text = if (mins >= 3L) {
+                                "最后一次定位在 ${formatTime(lastAt)}，已经 ${mins} 分钟没有新位置了。" +
+                                    "多半是记录被系统中断了，中间这段补不回来。"
+                            } else {
+                                "最后一次定位在 ${formatTime(lastAt)}。"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (mins >= 3L) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text("要继续它，还是结束它？结束时会按最后一次定位的时间收尾，不会虚报时长。")
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -5734,6 +5787,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.graphics.Color
 import com.llyytt.path.ui.XingjiTheme
 import android.content.Intent
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -5810,10 +5864,17 @@ fun SettingsScreen(
     }
 
     val palette = XingjiTheme.palette
-    val batteryUnrestricted = remember(context) {
-        val pm = context.getSystemService(android.content.Context.POWER_SERVICE)
-            as android.os.PowerManager
-        pm.isIgnoringBatteryOptimizations(context.packageName)
+    // 电池优化白名单状态：从系统设置页返回时要重新读，所以做成可刷新的 state
+    var batteryUnrestricted by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                batteryUnrestricted = isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
 
@@ -5876,22 +5937,29 @@ fun SettingsScreen(
                         .clickable {
                             val ctx = context
                             runCatching {
-                                ctx.startActivity(
+                                val intent = if (!batteryUnrestricted) {
+                                    // 直接弹出「允许后台运行」系统对话框，一次点完；
+                                    // 比把用户丢进长长的应用列表里好找。
+                                    Intent(
+                                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        android.net.Uri.parse("package:" + ctx.packageName),
+                                    )
+                                } else {
                                     Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                                )
+                                }
+                                ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                             }
                         }
                         .padding(horizontal = 20.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("后台运行检查", style = MaterialTheme.typography.bodyLarge)
+                        Text("后台运行设置", style = MaterialTheme.typography.bodyLarge)
                         Text(
                             text = if (batteryUnrestricted) {
-                                "已在电池优化白名单里"
+                                "电池优化：不限制。再确认下省电策略是「无限制」"
                             } else {
-                                "未加白名单——锁屏后可能被系统清理，导致记录中断"
+                                "点这里：省电策略选「无限制」，电池优化选不限制（两个都要）"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = if (batteryUnrestricted) {
@@ -6127,6 +6195,12 @@ private fun hairlineTextFieldColors(): androidx.compose.material3.TextFieldColor
         cursorColor = palette.accent,
     )
 }
+
+/** 是否在系统「电池优化」白名单里（doze 白名单，和 MIUI/HyperOS 的省电策略不是一回事）。 */
+private fun isIgnoringBatteryOptimizations(context: android.content.Context): Boolean {
+    val pm = context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager
+    return pm?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+}
 ```
 
 <!-- FILE: app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt -->
@@ -6198,6 +6272,7 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var splitTarget by remember { mutableStateOf<TripSegmentEntity?>(null) }
     var mergeTarget by remember { mutableStateOf<Pair<TripSegmentEntity, TripSegmentEntity>?>(null) }
+    var confirmOverwrite by remember { mutableStateOf(false) }
 
     suspend fun reload() {
         detail = app.tripRepository.detail(tripId)
@@ -6220,6 +6295,41 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
         }
     }
 
+    // 自动分段会重建所有分段，会覆盖手动的改方式/拆分/合并。
+    // 之前是直接执行，用户的手动修正会无声消失（手册技术债里记着的一条）。
+    fun requestAutoSegment() {
+        scope.launch {
+            val edited = runCatching { app.segmentRepository.hasManualEdits(tripId) }.getOrDefault(false)
+            if (edited) {
+                confirmOverwrite = true
+            } else {
+                run { app.segmentRepository.autoSegment(tripId) }
+            }
+        }
+    }
+
+    if (confirmOverwrite) {
+        AlertDialog(
+            onDismissRequest = { confirmOverwrite = false },
+            title = { Text("重新自动分段？") },
+            text = {
+                Text(
+                    "这条行程里已经有手动改过的地方（改方式 / 拆分 / 合并）。\n" +
+                        "重新自动分段会把它们全部覆盖，且不能撤销。",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmOverwrite = false
+                    run { app.segmentRepository.autoSegment(tripId) }
+                }) { Text("覆盖") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmOverwrite = false }) { Text("取消") }
+            },
+        )
+    }
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -6237,7 +6347,7 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
                 )
                 TextButton(
                     enabled = !busy,
-                    onClick = { run { app.segmentRepository.autoSegment(tripId) } },
+                    onClick = { requestAutoSegment() },
                 ) {
                     Text("自动分段")
                 }
@@ -6280,7 +6390,7 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
                         Spacer(Modifier.height(24.dp))
                         // 主 CTA：直接给「自动分段」按钮，不用让用户去右上角找
                         androidx.compose.material3.Button(
-                            onClick = { run { app.segmentRepository.autoSegment(tripId) } },
+                            onClick = { requestAutoSegment() },
                             enabled = !busy,
                             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                                 containerColor = palette.accent,
@@ -9811,6 +9921,8 @@ dependencies {
 
     <!-- Android 13+ 通知权限，否则前台服务的通知会被静默丢掉 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 用于向系统申请「忽略电池优化」白名单；不加这个权限，跳转会被系统直接忽略 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
 
