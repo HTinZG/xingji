@@ -226,10 +226,28 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 
 ⑦ 抓一次鉴权日志
    adb logcat -c → 打开地图 → 确认无 authErrLog</code></pre>
+<h3 id="s20">6.1 发布到 GitHub Releases</h3>
+<p>打完正式包之后（需要代理能连 GitHub）：</p>
+<pre><code># 1) 打 tag 并推送
+git tag -a v0.3.0 -m &quot;行迹 0.3.0&quot;
+git push origin main
+git push origin v0.3.0
+
+# 2) 用 API 建 Release 并上传 APK（机器上没装 gh CLI）
+#    token 从 Git Credential Manager 取，不要写进脚本、不要 echo
+#    脚本见 tools/make-release.ps1，参数：-Version 0.3.0</code></pre>
+<p>要点：</p>
+<ul>
+<li><strong>tag 和 versionName 必须一致</strong>（<code>v0.3.0</code> ↔ <code>versionName &quot;0.3.0&quot;</code>），否则以后对不上号；</li>
+<li>Release 正文里写三样：这版改了什么、怎么装、<strong>已知问题</strong>（别只写好话）；</li>
+<li>附上 APK 的 SHA-256，方便核对下载到的包有没有坏；</li>
+<li>仓库是私有的，API 需要 token；账号密码在 Windows 凭据管理器里，<code>git push</code> 能过就说明有。</li>
+</ul>
+<p>已验证的发布：<code>v0.3.0</code> → https://github.com/HTinZG/xingji/releases/tag/v0.3.0</p>
 <hr>
-<h2 id="s20">7. 踩坑记录</h2>
+<h2 id="s21">7. 踩坑记录</h2>
 <p>按「现象 → 原因 → 解法」记。<strong>这些坑我都踩过一遍，你以后升级可能再遇到。</strong></p>
-<h3 id="s21">构建环境</h3>
+<h3 id="s22">构建环境</h3>
 <p><strong>#1 构建报 <code>Failed to find Build Tools revision 35.0.0</code></strong></p>
 <p>原因：AGP 默认要 35.0.0，本机只装了 36.0.0。</p>
 <p>解法：<code>buildToolsVersion = &quot;36.0.0&quot;</code> 显式钉死。</p>
@@ -249,7 +267,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p>原因：Room 的注解处理器自带的 metadata 读取库太旧。</p>
 <p>解法：<code>kapt(&quot;org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.21&quot;)</code> 顶到同版本。</p>
 <p>（KSP 暂不可用——2.4.21 没有对应的 KSP 发布。）</p>
-<h3 id="s22">高德地图</h3>
+<h3 id="s23">高德地图</h3>
 <p><strong>#7 <code>CoordinateConverter</code> 返回类型不匹配</strong></p>
 <p>原因：<code>coord()</code> 只是设置参数，不执行转换。</p>
 <p>解法：链式末尾必须 <code>.convert()</code>。</p>
@@ -261,7 +279,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p>解法：<code>-dontwarn com.amap.ams.<strong></code> + <code>-dontwarn com.amap.location.</strong></code>。</p>
 <p><strong>#10 地图白屏</strong></p>
 <p>排查顺序：① 是白屏还是闪退（闪退多半 ABI 不对）→ ② 抓 <code>authErrLog</code> 看 info → ③ 核对 SHA1 → ④ 核对包名 → ⑤ 确认 Key 真的进了包（<code>aapt2 dump xmltree</code>）。</p>
-<h3 id="s23">数据与业务</h3>
+<h3 id="s24">数据与业务</h3>
 <p><strong>#11 分段操作后数据处于半拆状态</strong></p>
 <p>原因：拆分的三步（改前段、顺移 seq、插后段）如果中途失败，库就烂了。</p>
 <p>解法：全部包在 <code>db.withTransaction {}</code> 里，最后跑不变量校验，失败抛异常让事务回滚。</p>
@@ -281,7 +299,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p><strong>#16 速度显示在静止时来回跳</strong></p>
 <p>原因：中位数平滑会让&quot;进入静止&quot;和&quot;离开静止&quot;都延迟。</p>
 <p>解法：非对称判定——低于阈值持续 5 秒才进静止，任一样本高于阈值立刻退出。</p>
-<h3 id="s24">安全与隐私</h3>
+<h3 id="s25">安全与隐私</h3>
 <p><strong>#17 DataStore 文件损坏导致 App 直接崩</strong></p>
 <p>原因：<code>InvalidProtocolBufferException</code> 没人接，进程挂掉。</p>
 <p>解法：<code>ReplaceFileCorruptionHandler { emptyPreferences() }</code>，损坏时回退空配置。</p>
@@ -298,7 +316,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p><strong>#21 高德报 <code>INVALID_USER_KEY</code> 但 Key 看起来是对的</strong></p>
 <p>原因：环境变量里是 <code>&lt;Key&gt;</code>——<strong>带尖括号</strong>，长度 34 而不是 32。</p>
 <p>解法：环境变量只放 Key 原文，不要尖括号、不要引号。</p>
-<h3 id="s25">界面</h3>
+<h3 id="s26">界面</h3>
 <p><strong>#22 状态栏和内容重叠</strong></p>
 <p>原因：edge-to-edge 下内容会画到状态栏底下。</p>
 <p>解法：页面根布局加 <code>statusBarsPadding()</code>。</p>
@@ -308,7 +326,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p><strong>#24 分享图会带上状态栏 / 别的页面</strong></p>
 <p>原因：整屏截图再裁剪，永远有裁漏的风险。</p>
 <p>解法：<strong>不截屏</strong>——只取地图控件的 <code>snapshot()</code>，再用 Canvas 在下方拼统计带。</p>
-<h3 id="s26">自动化测试（我用 adb 操作手机时踩的）</h3>
+<h3 id="s27">自动化测试（我用 adb 操作手机时踩的）</h3>
 <p><strong>#25 中文输入法把 <code>:</code> 变成全角 <code>：</code>、把 <code>http</code> 自动补成 <code>https</code></strong></p>
 <p>解法：<code>adb shell ime disable &lt;输入法id&gt;</code>，禁用后 <code>input text</code> 走按键注入，不会触发联想。</p>
 <p><strong>#26 <code>input text &#x27;How many km&#x27;</code> 只输入了 <code>How</code></strong></p>
@@ -345,15 +363,15 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 </ol>
 <p>教训：<strong>时长 ≠ 还在记录</strong>。计时器按 <code>startedAt</code> 走，服务死了它照样跑。判断是否还活着要看「最后一个点多新」。</p>
 <hr>
-<h2 id="s27">8. 测试清单状态</h2>
+<h2 id="s28">8. 测试清单状态</h2>
 <blockquote>完整版见 <code>docs/step9-test-checklist.md</code></blockquote>
-<h3 id="s28">阻塞项</h3>
+<h3 id="s29">阻塞项</h3>
 <table><thead><tr><th>项</th><th>状态</th></tr></thead><tbody>
 <tr><td>澎湃 OS 五设置后户外 1 小时不中断</td><td>⬜ <strong>待你出门实测（唯一还没绿的一条）</strong></td></tr>
 <tr><td>进程被杀后恢复</td><td>✅ 已验证（自动结束旧行程并提示）</td></tr>
 <tr><td>拆分中途校验失败全回滚</td><td>✅ 已验证（3 段数据逐字段一致）</td></tr>
 </tbody></table>
-<h3 id="s29">已验证的内容</h3>
+<h3 id="s30">已验证的内容</h3>
 <table><thead><tr><th>项</th><th>结果</th></tr></thead><tbody>
 <tr><td>单测</td><td>65 个，0 失败</td></tr>
 <tr><td>16KB 页对齐</td><td>4 个 .so 全部 16384</td></tr>
@@ -364,7 +382,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <tr><td>定位异常</td><td>定位关闭 / 室内无星 两种情况均能正确提示并自动恢复</td></tr>
 <tr><td>记录页地图</td><td>实时轨迹 + 光标跟随，实测可用</td></tr>
 </tbody></table>
-<h2 id="s30">9. 已知限制与技术债</h2>
+<h2 id="s31">9. 已知限制与技术债</h2>
 <table><thead><tr><th>项</th><th>说明</th><th>优先级</th></tr></thead><tbody>
 <tr><td>户外长时记录未验证</td><td>唯一没绿的阻塞项</td><td>高</td></tr>
 <tr><td>~~<code>autoSegment</code> 覆盖手动修正~~</td><td>✅ 已改为先弹确认框</td><td>—</td></tr>
@@ -377,7 +395,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <tr><td>分享图未做过真机截图验证</td><td>release 包读不到 cache，要验得装 debug 包</td><td>低</td></tr>
 </tbody></table>
 <hr>
-<h2 id="s31">10. 商业化与合规（别忘）</h2>
+<h2 id="s32">10. 商业化与合规（别忘）</h2>
 <p><strong>现状</strong>：侧载自用，不触发高德商用授权。</p>
 <p><strong>以下情况必须重新评估</strong>：</p>
 <table><thead><tr><th>场景</th><th>是否需要授权</th></tr></thead><tbody>
@@ -390,14 +408,14 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p>替代方案：换 MapLibre + 自建瓦片 / OSM。架构上已经留好位置（<code>MapEngine</code> 接口），</p>
 <p>但会失去高德的中文 POI 和路网精度。</p>
 <hr>
-<h2 id="s32">11. 给你的三条经验</h2>
-<h3 id="s33">① 改阈值只改一个文件</h3>
+<h2 id="s33">11. 给你的三条经验</h2>
+<h3 id="s34">① 改阈值只改一个文件</h3>
 <p>所有可调参数都在 <code>core/rules/Tuning.kt</code>：采样间隔、精度过滤、分段速度阈值、</p>
 <p>停留判定、间隙切分、平滑窗口。调参时不要散着改。</p>
-<h3 id="s34">② 每次改动都要跑单测</h3>
+<h3 id="s35">② 每次改动都要跑单测</h3>
 <p><code>core/rules</code> 和 <code>core/export</code> 是纯 Kotlin，改完立刻能验证。</p>
 <p>这一段写错了，UI 上很难看出来，但导出的 GPX 会偏、分段会错。</p>
-<h3 id="s35">③ 先备份两样东西</h3>
+<h3 id="s36">③ 先备份两样东西</h3>
 <ul>
 <li><code>D:\AndroidKeys\xingji-release.jks</code>（丢了就永远无法给已装用户升级）</li>
 <li><code>local.properties</code> 里的两个密码</li>
@@ -405,7 +423,7 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p><strong>keystore 丢了 = 这个 App 的死期。</strong> 换新 keystore 意味着 SHA1 变了、签名变了，</p>
 <p>所有已装设备必须卸载重装，数据全丢。</p>
 <hr>
-<h2 id="s36">12. 关键文件速查</h2>
+<h2 id="s37">12. 关键文件速查</h2>
 <table><thead><tr><th>我想改…</th><th>去这个文件</th></tr></thead><tbody>
 <tr><td>分段/停留的阈值</td><td><code>core/rules/Tuning.kt</code></td></tr>
 <tr><td>界面上显示的速度</td><td><code>core/rules/SpeedDisplay.kt</code></td></tr>
@@ -424,9 +442,9 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <hr>
 <p>*本文档随项目一起放在 <code>D:\Xingji\docs\handbook.md</code>，与源码同步更新。*</p>
 <hr>
-<h2 id="s37">13. GitHub 仓库</h2>
+<h2 id="s38">13. GitHub 仓库</h2>
 <p><strong>地址</strong>：https://github.com/HTinZG/xingji （私有）</p>
-<h3 id="s38">这台机器上的特殊配置</h3>
+<h3 id="s39">这台机器上的特殊配置</h3>
 <p>推送踩过两种网络情况，都要会处理：</p>
 <ul>
 <li><strong>直连被重置</strong>（Recv failure: Connection was reset）：git 不会自动用系统代理，需要显式配置</li>
@@ -438,12 +456,12 @@ adb logcat -d | findstr /i &quot;authErrLog&quot;</code></pre>
 <p>凭据用 Git Credential Manager 存在 Windows 凭据管理器里，登录过一次就不用再登。</p>
 <p>helper 的路径带空格，必须用 !&quot;...&quot; 包起来，否则 git 会把它当成 <code>git-credential-&lt;名字&gt;</code> 去找：</p>
 <pre><code>git config credential.helper &#x27;!&quot;/c/Program Files/Git/mingw64/bin/git-credential-manager.exe&quot;&#x27;</code></pre>
-<h3 id="s39">以后怎么更新</h3>
+<h3 id="s40">以后怎么更新</h3>
 <pre><code>cd D:\Xingji
 git add -A
 git commit -m &quot;这次改了什么&quot;
 git push</code></pre>
-<h3 id="s40">仓库里有什么</h3>
+<h3 id="s41">仓库里有什么</h3>
 <p>137 个文件、约 43 MB：</p>
 <table><thead><tr><th>目录</th><th>内容</th></tr></thead><tbody>
 <tr><td><code>app/</code></td><td>源码 67 个（含高德 SDK 的 jar 与 .so）</td></tr>
@@ -451,10 +469,10 @@ git push</code></pre>
 <tr><td><code>tools/</code></td><td>16KB 检查脚本</td></tr>
 <tr><td>根目录</td><td>Gradle 配置、README、.gitignore</td></tr>
 </tbody></table>
-<h3 id="s41">不会进仓库的东西</h3>
+<h3 id="s42">不会进仓库的东西</h3>
 <p><code>local.properties</code>（含签名密码）、<code>keystore/</code>、<code>*.jks</code>、<code>artifacts/</code>（APK）、</p>
 <p><code>build/</code>、<code>.gradle/</code>。提交前用 <code>git ls-files</code> 核对过，也全文扫过密钥。</p>
-<h3 id="s42">备份提醒</h3>
+<h3 id="s43">备份提醒</h3>
 <p>GitHub 只备份了<strong>代码和文档</strong>。还有两样东西不在里面，必须单独备份：</p>
 <ol>
 <li><code>D:\AndroidKeys\xingji-release.jks</code>（签名证书，丢了就无法给已装用户升级）</li>
@@ -463,7 +481,7 @@ git push</code></pre>
 <blockquote>GitHub 是公开托管的私有仓库，不要把它当成唯一备份。 建议 keystore 另外存一份到 U 盘或加密网盘。</blockquote>
 <hr>
 <hr>
-<h3 id="s43">定位</h3>
+<h3 id="s44">定位</h3>
 <p><strong>#28 小米/HyperOS 上「定位总开关关着」查不出来</strong></p>
 <p>现象：定位明明是关的，App 却只显示「正在搜星…」，30 秒后提示「可能是室内或没有信号」。</p>
 <p>原因：LocationManager.isProviderEnabled(GPS_PROVIDER) 在部分机型上，即使定位总开关关闭也返回 	rue。</p>
@@ -496,11 +514,11 @@ git push</code></pre>
 <p>2.2 秒后自动隐藏。既没有图层冲突，也不会挡地图。</p>
 <hr>
 <hr>
-<h2 id="s44">14. 视觉系统（要改配色/字号从这里入手）</h2>
+<h2 id="s45">14. 视觉系统（要改配色/字号从这里入手）</h2>
 <p>设计定位：<strong>夜间城市仪表盘</strong> —— 底子极暗、信息极少、数字极大，只留一种橙色的光。</p>
 <p>参考 Apple 的克制 + GTA5 的街头感。完整方案见 <code>docs/design-proposal.md</code>，</p>
 <p>效果图在 <code>docs/design/</code>。</p>
-<h3 id="s45">唯一入口：<code>ui/Theme.kt</code></h3>
+<h3 id="s46">唯一入口：<code>ui/Theme.kt</code></h3>
 <table><thead><tr><th>想改什么</th><th>改哪里</th></tr></thead><tbody>
 <tr><td>主色（日落橙）</td><td><code>DarkPalette.accent</code> / <code>LightPalette.accent</code></td></tr>
 <tr><td>背景、面板、分割线</td><td>同名 token</td></tr>
@@ -508,7 +526,7 @@ git push</code></pre>
 <tr><td>字号、字距</td><td><code>XingjiTypography</code></td></tr>
 <tr><td>数字用的窄体字</td><td><code>CondensedFamily</code>（<code>res/font/barlow_condensed_*.ttf</code>）</td></tr>
 </tbody></table>
-<h3 id="s46">三条硬规矩</h3>
+<h3 id="s47">三条硬规矩</h3>
 <ol>
 <li><strong>不要直接写死颜色</strong>，一律走 <code>MaterialTheme.colorScheme.*</code> 或 <code>XingjiTheme.palette.*</code>，</li>
 </ol>
@@ -528,10 +546,11 @@ git push</code></pre>
 <hr>
 <hr>
 <hr>
-<h2 id="s47">附录 A：源码全文</h2>
+<hr>
+<h2 id="s48">附录 A：源码全文</h2>
 <blockquote>为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」， 那时翻 GitHub 不如在本地文档里直接搜关键词快。 源码本身以仓库为准，这里这份是<strong>某一时刻的快照</strong>（64 个文件 / 9439 行）。 改完代码后运行 <code>python tools/gen-handbook.py</code> 重新生成。</blockquote>
 <p>网页版里每个文件都是折叠的，点标题展开。</p>
-<h3 id="s48">目录</h3>
+<h3 id="s49">目录</h3>
 <table class="srctable"><thead><tr><th>分组</th><th>文件</th><th>行数</th><th>说明</th></tr></thead><tbody>
 <tr><td>主程序</td><td><code>app/src/main/java/com/llyytt/path/core/export/BulkExporter.kt</code></td><td>76</td><td>把<strong>所有行程</strong>一次性导出成一个 zip，里面每条行程一个 GPX 文件。</td></tr>
 <tr><td>主程序</td><td><code>app/src/main/java/com/llyytt/path/core/export/ExportModels.kt</code></td><td>58</td><td>导出用的扁平模型。</td></tr>
@@ -598,7 +617,7 @@ git push</code></pre>
 <tr><td>构建与配置</td><td><code>settings.gradle.kts</code></td><td>25</td><td>工程与仓库配置</td></tr>
 <tr><td>构建与配置</td><td><code>tools/Check-16Kb.ps1</code></td><td>181</td><td>16KB 页对齐检查脚本</td></tr>
 </tbody></table>
-<h3 id="s49">主程序</h3>
+<h3 id="s50">主程序</h3>
 <details class="src"><summary><span class="fpath">app/src/main/java/com/llyytt/path/core/export/BulkExporter.kt</span></summary><pre><code>package com.llyytt.path.core.export
 
 import android.content.Context
@@ -8525,7 +8544,7 @@ fun XingjiTheme(
         )
     }
 }</code></pre></details>
-<h3 id="s50">单元测试</h3>
+<h3 id="s51">单元测试</h3>
 <details class="src"><summary><span class="fpath">app/src/test/java/com/llyytt/path/core/export/TrackExporterTest.kt</span></summary><pre><code>package com.llyytt.path.core.export
 
 import com.llyytt.path.data.db.TransportMode
@@ -9439,7 +9458,7 @@ class TripInvariantsTest {
         ).contains(&quot;ENDED_AT_MISSING&quot;))
     }
 }</code></pre></details>
-<h3 id="s51">构建与配置</h3>
+<h3 id="s52">构建与配置</h3>
 <details class="src"><summary><span class="fpath">app/build.gradle.kts</span></summary><pre><code>import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
@@ -9504,8 +9523,8 @@ android {
         applicationId = &quot;com.llyytt.path&quot;
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = &quot;0.2.0&quot;
+        versionCode = 2
+        versionName = &quot;0.3.0&quot;
 
         manifestPlaceholders[&quot;amapKey&quot;] = amapKey
 

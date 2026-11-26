@@ -261,6 +261,30 @@ adb logcat -d | findstr /i "authErrLog"
    adb logcat -c → 打开地图 → 确认无 authErrLog
 ```
 
+### 6.1 发布到 GitHub Releases
+
+打完正式包之后（需要代理能连 GitHub）：
+
+```powershell
+# 1) 打 tag 并推送
+git tag -a v0.3.0 -m "行迹 0.3.0"
+git push origin main
+git push origin v0.3.0
+
+# 2) 用 API 建 Release 并上传 APK（机器上没装 gh CLI）
+#    token 从 Git Credential Manager 取，不要写进脚本、不要 echo
+#    脚本见 tools/make-release.ps1，参数：-Version 0.3.0
+```
+
+要点：
+
+- **tag 和 versionName 必须一致**（`v0.3.0` ↔ `versionName "0.3.0"`），否则以后对不上号；
+- Release 正文里写三样：这版改了什么、怎么装、**已知问题**（别只写好话）；
+- 附上 APK 的 SHA-256，方便核对下载到的包有没有坏；
+- 仓库是私有的，API 需要 token；账号密码在 Windows 凭据管理器里，`git push` 能过就说明有。
+
+已验证的发布：`v0.3.0` → https://github.com/HTinZG/xingji/releases/tag/v0.3.0
+
 ---
 
 ## 7. 踩坑记录
@@ -658,6 +682,8 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
    地图本身是浅色的，浅色模式下用主题色会变成白底白字。
 3. **不要在 SurfaceView（地图）上方做全屏覆盖层**，原因见踩坑 #32。
 
+
+---
 
 ---
 
@@ -9943,8 +9969,8 @@ android {
         applicationId = "com.llyytt.path"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.2.0"
+        versionCode = 2
+        versionName = "0.3.0"
 
         manifestPlaceholders["amapKey"] = amapKey
 
