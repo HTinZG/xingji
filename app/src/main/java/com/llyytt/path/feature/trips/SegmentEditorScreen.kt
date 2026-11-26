@@ -64,6 +64,7 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var splitTarget by remember { mutableStateOf<TripSegmentEntity?>(null) }
     var mergeTarget by remember { mutableStateOf<Pair<TripSegmentEntity, TripSegmentEntity>?>(null) }
+    var confirmOverwrite by remember { mutableStateOf(false) }
 
     suspend fun reload() {
         detail = app.tripRepository.detail(tripId)
@@ -86,6 +87,41 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
         }
     }
 
+    // 自动分段会重建所有分段，会覆盖手动的改方式/拆分/合并。
+    // 之前是直接执行，用户的手动修正会无声消失（手册技术债里记着的一条）。
+    fun requestAutoSegment() {
+        scope.launch {
+            val edited = runCatching { app.segmentRepository.hasManualEdits(tripId) }.getOrDefault(false)
+            if (edited) {
+                confirmOverwrite = true
+            } else {
+                run { app.segmentRepository.autoSegment(tripId) }
+            }
+        }
+    }
+
+    if (confirmOverwrite) {
+        AlertDialog(
+            onDismissRequest = { confirmOverwrite = false },
+            title = { Text("重新自动分段？") },
+            text = {
+                Text(
+                    "这条行程里已经有手动改过的地方（改方式 / 拆分 / 合并）。\n" +
+                        "重新自动分段会把它们全部覆盖，且不能撤销。",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmOverwrite = false
+                    run { app.segmentRepository.autoSegment(tripId) }
+                }) { Text("覆盖") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmOverwrite = false }) { Text("取消") }
+            },
+        )
+    }
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -103,7 +139,7 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
                 )
                 TextButton(
                     enabled = !busy,
-                    onClick = { run { app.segmentRepository.autoSegment(tripId) } },
+                    onClick = { requestAutoSegment() },
                 ) {
                     Text("自动分段")
                 }
@@ -146,7 +182,7 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
                         Spacer(Modifier.height(24.dp))
                         // 主 CTA：直接给「自动分段」按钮，不用让用户去右上角找
                         androidx.compose.material3.Button(
-                            onClick = { run { app.segmentRepository.autoSegment(tripId) } },
+                            onClick = { requestAutoSegment() },
                             enabled = !busy,
                             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                                 containerColor = palette.accent,

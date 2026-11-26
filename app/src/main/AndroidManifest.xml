@@ -16,6 +16,8 @@
 
     <!-- Android 13+ 通知权限，否则前台服务的通知会被静默丢掉 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 用于向系统申请「忽略电池优化」白名单；不加这个权限，跳转会被系统直接忽略 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
 

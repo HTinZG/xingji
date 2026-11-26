@@ -20,6 +20,10 @@ import com.llyytt.path.data.db.TripSegmentEntity
 class SegmentRepository(private val db: AppDatabase) {
 
     /** 跑一次自动分段并覆盖旧结果。返回段数。 */
+    /** 这条行程是否被手动改过（改方式/拆分/合并）。自动分段会覆盖这些修改，调用前先问。 */
+    suspend fun hasManualEdits(tripId: Long): Boolean =
+        db.tripSegmentDao().getByTrip(tripId).any { it.manuallyEdited }
+
     suspend fun autoSegment(tripId: Long): Int = db.withTransaction {
         val points = db.trackPointDao().getByTrip(tripId)
         val result = Segmenter.run(points)

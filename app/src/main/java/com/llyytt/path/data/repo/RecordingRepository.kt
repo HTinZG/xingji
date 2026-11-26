@@ -69,17 +69,35 @@ class RecordingRepository(private val db: AppDatabase) {
         }
     }
 
+    /**
+     * 结束行程。
+     *
+     * 关键：**结束时间取「最后一个轨迹点的时间」，而不是当前时间**（相差超过 2 分钟时）。
+     * 因为 App 可能在中途被系统冻结/强停，而行程一直挂着「记录中」，
+     * 用户过半小时才回来点结束——按当前时间收尾就会凭空多出半小时的"时长"，
+     * 而这段时间一个点都没有。宁可时长短一点，也不要假数据。
+     */
     suspend fun finish(tripId: Long) = mutex.withLock {
         db.withTransaction {
             val now = System.currentTimeMillis()
-            db.tripPauseDao().closeAllOpen(tripId, now)
+            val lastPointAt = db.trackPointDao().lastPoint(tripId)?.recordedAt
+            val endedAt = if (lastPointAt != null && lastPointAt > 0 && now - lastPointAt > SILENT_GAP_MS) {
+                lastPointAt
+            } else {
+                now
+            }
+            db.tripPauseDao().closeAllOpen(tripId, endedAt)
             db.tripDao().findById(tripId)?.let {
                 db.tripDao().update(
-                    it.copy(status = TripStatus.FINISHED, endedAt = now, updatedAt = now),
+                    it.copy(status = TripStatus.FINISHED, endedAt = endedAt, updatedAt = now),
                 )
             }
         }
     }
+
+    /** 最后一次定位的时间；没有点返回 null。 */
+    suspend fun lastPointAt(tripId: Long): Long? =
+        db.trackPointDao().lastPoint(tripId)?.recordedAt
 
     /** 记一个点。seq 由调用方保证递增（服务里是单协程串行写入）。 */
     suspend fun insertPoint(
@@ -134,5 +152,10 @@ class RecordingRepository(private val db: AppDatabase) {
         db.withTransaction {
             db.tripDao().deleteAll()
         }
+    }
+
+    private companion object {
+        /** 最后一个点与当前时间差超过这个值，就认为中途已经断了 */
+        const val SILENT_GAP_MS = 120_000L
     }
 }

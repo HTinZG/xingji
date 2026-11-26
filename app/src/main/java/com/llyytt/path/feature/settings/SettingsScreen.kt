@@ -27,6 +27,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.graphics.Color
 import com.llyytt.path.ui.XingjiTheme
 import android.content.Intent
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -103,10 +104,17 @@ fun SettingsScreen(
     }
 
     val palette = XingjiTheme.palette
-    val batteryUnrestricted = remember(context) {
-        val pm = context.getSystemService(android.content.Context.POWER_SERVICE)
-            as android.os.PowerManager
-        pm.isIgnoringBatteryOptimizations(context.packageName)
+    // 电池优化白名单状态：从系统设置页返回时要重新读，所以做成可刷新的 state
+    var batteryUnrestricted by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                batteryUnrestricted = isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
 
@@ -169,22 +177,29 @@ fun SettingsScreen(
                         .clickable {
                             val ctx = context
                             runCatching {
-                                ctx.startActivity(
+                                val intent = if (!batteryUnrestricted) {
+                                    // 直接弹出「允许后台运行」系统对话框，一次点完；
+                                    // 比把用户丢进长长的应用列表里好找。
+                                    Intent(
+                                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        android.net.Uri.parse("package:" + ctx.packageName),
+                                    )
+                                } else {
                                     Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                                )
+                                }
+                                ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                             }
                         }
                         .padding(horizontal = 20.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("后台运行检查", style = MaterialTheme.typography.bodyLarge)
+                        Text("后台运行设置", style = MaterialTheme.typography.bodyLarge)
                         Text(
                             text = if (batteryUnrestricted) {
-                                "已在电池优化白名单里"
+                                "电池优化：不限制。再确认下省电策略是「无限制」"
                             } else {
-                                "未加白名单——锁屏后可能被系统清理，导致记录中断"
+                                "点这里：省电策略选「无限制」，电池优化选不限制（两个都要）"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = if (batteryUnrestricted) {
@@ -419,4 +434,10 @@ private fun hairlineTextFieldColors(): androidx.compose.material3.TextFieldColor
         unfocusedLabelColor = palette.textTertiary,
         cursorColor = palette.accent,
     )
+}
+
+/** 是否在系统「电池优化」白名单里（doze 白名单，和 MIUI/HyperOS 的省电策略不是一回事）。 */
+private fun isIgnoringBatteryOptimizations(context: android.content.Context): Boolean {
+    val pm = context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager
+    return pm?.isIgnoringBatteryOptimizations(context.packageName) ?: false
 }

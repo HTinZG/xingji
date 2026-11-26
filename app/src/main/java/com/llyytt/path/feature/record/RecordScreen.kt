@@ -91,6 +91,8 @@ fun RecordScreen(
 
     var message by remember { mutableStateOf<String?>(null) }
     var unfinished by remember { mutableStateOf<TripEntity?>(null) }
+    // 未结束行程的最后一个点时间，用来在对话框里说清楚「断了多久」
+    var lastFixAt by remember { mutableStateOf<Long?>(null) }
     var showSaved by remember { mutableStateOf(false) }
     // 每秒跳一次的时钟：用来算「距离上次成功定位过了多久」
     var nowTick by remember { mutableLongStateOf(0L) }
@@ -186,7 +188,9 @@ fun RecordScreen(
     // 首次进入时看看有没有「上次没结束的行程」
     LaunchedEffect(Unit) {
         if (!state.isActive) {
-            unfinished = app.recordingRepository.unfinished()
+            val t = app.recordingRepository.unfinished()
+            unfinished = t
+            lastFixAt = t?.let { app.recordingRepository.lastPointAt(it.id) }
         }
     }
 
@@ -496,7 +500,27 @@ fun RecordScreen(
             onDismissRequest = { unfinished = null },
             title = { Text("有一条没结束的行程") },
             text = {
-                Text("开始于 ${formatTime(pending.startedAt)}，状态 ${statusText(pending.status)}。要继续它，还是结束它？")
+                val lastAt = pending.endedAt ?: lastFixAt
+                Column {
+                    Text("开始于 ${formatTime(pending.startedAt)}，状态 ${statusText(pending.status)}。")
+                    if (lastAt != null && lastAt > 0L) {
+                        Spacer(Modifier.height(8.dp))
+                        val mins = ((System.currentTimeMillis() - lastAt) / 60_000L).coerceAtLeast(0L)
+                        Text(
+                            text = if (mins >= 3L) {
+                                "最后一次定位在 ${formatTime(lastAt)}，已经 ${mins} 分钟没有新位置了。" +
+                                    "多半是记录被系统中断了，中间这段补不回来。"
+                            } else {
+                                "最后一次定位在 ${formatTime(lastAt)}。"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (mins >= 3L) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text("要继续它，还是结束它？结束时会按最后一次定位的时间收尾，不会虚报时长。")
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
