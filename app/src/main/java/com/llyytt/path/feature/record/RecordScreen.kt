@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -91,6 +92,8 @@ fun RecordScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var unfinished by remember { mutableStateOf<TripEntity?>(null) }
     var showSaved by remember { mutableStateOf(false) }
+    // 每秒跳一次的时钟：用来算「距离上次成功定位过了多久」
+    var nowTick by remember { mutableLongStateOf(0L) }
     var wasActive by remember { mutableStateOf(false) }
     // 任务提示条：记录中只在状态切换时短暂显示 3 秒，避免常驻遮挡地图
     var showMissionBar by remember { mutableStateOf(true) }
@@ -119,6 +122,13 @@ fun RecordScreen(
             startNow()
         } else {
             message = "没有定位权限，无法记录"
+        }
+    }
+
+    LaunchedEffect(state.isActive) {
+        while (state.isActive) {
+            nowTick = System.currentTimeMillis()
+            kotlinx.coroutines.delay(1000L)
         }
     }
 
@@ -252,6 +262,32 @@ fun RecordScreen(
                         )
                     }
                 }
+                }
+
+                // 定位中断告警：有回调错误时上面已经提示，这里专门抓「没有任何回调」的静默中断
+                // （后台服务被系统冻结时就是这样：不报错，只是再也没有点进来）
+                if (state.isActive && state.hasFirstFix && state.lastFixAt > 0) {
+                    val stalledSec = ((nowTick - state.lastFixAt) / 1000L).coerceAtLeast(0L)
+                    if (stalledSec >= 90L) {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            color = Color(0xFF4A1410),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text(
+                                    text = "定位已中断 ${stalledSec / 60} 分钟",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color(0xFFFF8A65),
+                                )
+                                Text(
+                                    text = "后台可能被系统清理了，检查电池设置",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.7f),
+                                )
+                            }
+                        }
+                    }
                 }
 
                 // 紧凑数据卡：文字退居次要，把画面让给地图

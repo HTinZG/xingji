@@ -443,6 +443,25 @@ fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Uni
 
                     Spacer(Modifier.height(6.dp))
 
+                    // 事后诊断：最后一个点离结束时间太久，说明中途定位就断了
+                    run {
+                        val lastPointAt = d.points.lastOrNull()?.recordedAt ?: 0L
+                        val endedAt = d.trip.endedAt ?: 0L
+                        if (lastPointAt > 0L && endedAt > lastPointAt) {
+                            val silentMin = (endedAt - lastPointAt) / 60_000L
+                            if (silentMin >= 5L) {
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    text = "⚠ 最后 ${silentMin} 分钟没有记录到位置" +
+                                        "（${Fmt.clock(lastPointAt)} 之后定位就停了），" +
+                                        "多半是后台服务被系统清理。请把本应用加入电池白名单。",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(28.dp),

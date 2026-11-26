@@ -26,6 +26,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.graphics.Color
 import com.llyytt.path.ui.XingjiTheme
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -102,6 +103,12 @@ fun SettingsScreen(
     }
 
     val palette = XingjiTheme.palette
+    val batteryUnrestricted = remember(context) {
+        val pm = context.getSystemService(android.content.Context.POWER_SERVICE)
+            as android.os.PowerManager
+        pm.isIgnoringBatteryOptimizations(context.packageName)
+    }
+
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -155,6 +162,46 @@ fun SettingsScreen(
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(top = 16.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val ctx = context
+                            runCatching {
+                                ctx.startActivity(
+                                    Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                )
+                            }
+                        }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("后台运行检查", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (batteryUnrestricted) {
+                                "已在电池优化白名单里"
+                            } else {
+                                "未加白名单——锁屏后可能被系统清理，导致记录中断"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (batteryUnrestricted) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                        )
+                    }
+                    Text(
+                        text = "›",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                HorizontalDivider()
 
                 Row(
                     modifier = Modifier

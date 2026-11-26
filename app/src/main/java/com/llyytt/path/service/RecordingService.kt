@@ -404,6 +404,7 @@ class RecordingService : Service() {
                 lastError = lastError,
                 liveTrack = liveTrack.toList(),
                 hasFirstFix = firstFixStored,
+                lastFixAt = lastPoint?.recordedAt ?: 0L,
                 speedMps = currentSpeedMps,
                 isStationary = isStationary,
             ),

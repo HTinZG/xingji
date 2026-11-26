@@ -23,6 +23,13 @@ data class RecordingUiState(
     val lastError: LocationError? = null,
     /** 冷启动首次定位是否已拿到（用于 UI 提示「正在搜星」） */
     val hasFirstFix: Boolean = false,
+    /**
+     * 最后一次成功入库的定位时间（毫秒）。
+     *
+     * 用来判断「记录中但定位已经停了」——这是后台服务被系统冻结时唯一的线索：
+     * 没有报错、没有回调，只是再也没有点进来。
+     */
+    val lastFixAt: Long = 0L,
     /** 平滑后的瞬时速度（m/s）。null 表示还没有足够样本。 */
     val speedMps: Double? = null,
     /** 速度持续低于阈值超过 5 秒 */

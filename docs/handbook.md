@@ -646,11 +646,13 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 
 ---
 
+---
+
 ## 附录 A：源码全文
 
 > 为什么把源码也抄进手册：这个项目以后大概率是「隔几个月想起来改一点」，
 > 那时翻 GitHub 不如在本地文档里直接搜关键词快。
-> 源码本身以仓库为准，这里这份是**某一时刻的快照**（63 个文件 / 8923 行）。
+> 源码本身以仓库为准，这里这份是**某一时刻的快照**（63 个文件 / 9153 行）。
 > 改完代码后运行 `python tools/gen-handbook.py` 重新生成。
 
 网页版里每个文件都是折叠的，点标题展开。
@@ -687,18 +689,18 @@ equestLocationUpdates(GPS_PROVIDER)。室内 GPS 无信号，而系统的网络�
 | 主程序 | `app/src/main/java/com/llyytt/path/data/repo/TripRepository.kt` | 68 | 只读查询。写入仍然走 RecordingRepository，职责分开。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/data/settings/SettingsStore.kt` | 49 | 轻量设置存储。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/map/MapEngine.kt` | 83 | 离线能力分级。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingService.kt` | 539 | 记录前台服务。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingStateHolder.kt` | 54 | 记录页的实时状态。服务写，UI 读。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/ai/AiChatScreen.kt` | 309 | AI 聊天。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingService.kt` | 540 | 记录前台服务。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/service/RecordingStateHolder.kt` | 61 | 记录页的实时状态。服务写，UI 读。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/ai/AiChatScreen.kt` | 323 | AI 聊天。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/mapdemo/MapDemoScreen.kt` | 185 | 天安门附近的一圈假轨迹，只用来验证“能画线”。第 3 步会换成真实记录。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/offline/OfflineInfoScreen.kt` | 123 | 离线地图说明页。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyGateScreen.kt` | 109 | 首启隐私门禁。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/privacy/PrivacyPolicyScreen.kt` | 127 | 隐私说明页。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt` | 588 | 记录页。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/settings/SettingsScreen.kt` | 340 | 设置页。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt` | 382 | 分段编辑器：自动分段 + 三个手动操作。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/record/RecordScreen.kt` | 650 | 记录页。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/settings/SettingsScreen.kt` | 423 | 设置页。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/SegmentEditorScreen.kt` | 415 | 分段编辑器：自动分段 + 三个手动操作。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TrackPainter.kt` | 159 | 把轨迹点转成地图能画的折线。 |
-| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripDetailScreen.kt` | 568 | 行程详情：地图 + 统计 + 简版回放。 |
+| 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripDetailScreen.kt` | 598 | 行程详情：地图 + 统计 + 简版回放。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/feature/trips/TripListScreen.kt` | 227 | 行程列表。 |
 | 主程序 | `app/src/main/java/com/llyytt/path/MainActivity.kt` | 104 | — |
 | 主程序 | `app/src/main/java/com/llyytt/path/XjApp.kt` | 82 | 全 App 唯一允许 import mapimpl 的地方。 |
@@ -3959,6 +3961,7 @@ class RecordingService : Service() {
                 lastError = lastError,
                 liveTrack = liveTrack.toList(),
                 hasFirstFix = firstFixStored,
+                lastFixAt = lastPoint?.recordedAt ?: 0L,
                 speedMps = currentSpeedMps,
                 isStationary = isStationary,
             ),
@@ -4121,6 +4124,13 @@ data class RecordingUiState(
     val lastError: LocationError? = null,
     /** 冷启动首次定位是否已拿到（用于 UI 提示「正在搜星」） */
     val hasFirstFix: Boolean = false,
+    /**
+     * 最后一次成功入库的定位时间（毫秒）。
+     *
+     * 用来判断「记录中但定位已经停了」——这是后台服务被系统冻结时唯一的线索：
+     * 没有报错、没有回调，只是再也没有点进来。
+     */
+    val lastFixAt: Long = 0L,
     /** 平滑后的瞬时速度（m/s）。null 表示还没有足够样本。 */
     val speedMps: Double? = null,
     /** 速度持续低于阈值超过 5 秒 */
@@ -4180,10 +4190,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -4368,12 +4380,20 @@ fun AiChatScreen(onBack: () -> Unit, onOpenSettings: () -> Unit) {
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        OutlinedTextField(
+                        val palette = com.llyytt.path.ui.XingjiTheme.palette
+                        TextField(
                             value = input,
                             onValueChange = { input = it },
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("问点关于行程的问题") },
                             maxLines = 4,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = palette.accent,
+                                unfocusedIndicatorColor = palette.hairline,
+                                cursorColor = palette.accent,
+                            ),
                         )
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -4440,6 +4460,7 @@ private fun GuideContent(onOpenSettings: () -> Unit) {
 @Composable
 private fun MessageBubble(message: AiChatMessageEntity) {
     val isUser = message.role == ChatRole.USER
+    val palette = com.llyytt.path.ui.XingjiTheme.palette
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
@@ -4447,16 +4468,19 @@ private fun MessageBubble(message: AiChatMessageEntity) {
         Card(
             modifier = Modifier.widthIn(max = 300.dp),
             colors = CardDefaults.cardColors(
-                containerColor = if (isUser) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
+                // 用户气泡：实橙底 + 深色文字（浅色模式）/ 近黑文字（深色模式）。
+                // 之前的 primaryContainer 浅橙底 + 橙文字在浅色模式下发污。
+                containerColor = if (isUser) palette.accent else MaterialTheme.colorScheme.surfaceVariant,
             ),
         ) {
             Text(
                 text = message.content,
                 style = MaterialTheme.typography.bodyMedium,
+                color = if (isUser) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
                 modifier = Modifier.padding(12.dp),
             )
         }
@@ -5066,12 +5090,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
@@ -5118,7 +5145,11 @@ fun RecordScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var unfinished by remember { mutableStateOf<TripEntity?>(null) }
     var showSaved by remember { mutableStateOf(false) }
+    // 每秒跳一次的时钟：用来算「距离上次成功定位过了多久」
+    var nowTick by remember { mutableLongStateOf(0L) }
     var wasActive by remember { mutableStateOf(false) }
+    // 任务提示条：记录中只在状态切换时短暂显示 3 秒，避免常驻遮挡地图
+    var showMissionBar by remember { mutableStateOf(true) }
     // 停止时 state.pointCount 会被重置成 0，所以要提前记住「停之前有多少点」
     var lastActivePoints by remember { mutableIntStateOf(0) }
 
@@ -5144,6 +5175,13 @@ fun RecordScreen(
             startNow()
         } else {
             message = "没有定位权限，无法记录"
+        }
+    }
+
+    LaunchedEffect(state.isActive) {
+        while (state.isActive) {
+            nowTick = System.currentTimeMillis()
+            kotlinx.coroutines.delay(1000L)
         }
     }
 
@@ -5186,6 +5224,15 @@ fun RecordScreen(
         if (showSaved) {
             kotlinx.coroutines.delay(2200)
             showSaved = false
+        }
+    }
+
+    // 任务提示条：状态切换时短暂显示 3 秒。空闲时一直显示，记录中让地图呼吸。
+    LaunchedEffect(state.isActive, state.status) {
+        showMissionBar = true
+        if (state.isActive) {
+            kotlinx.coroutines.delay(3000)
+            showMissionBar = false
         }
     }
 
@@ -5268,6 +5315,32 @@ fun RecordScreen(
                         )
                     }
                 }
+                }
+
+                // 定位中断告警：有回调错误时上面已经提示，这里专门抓「没有任何回调」的静默中断
+                // （后台服务被系统冻结时就是这样：不报错，只是再也没有点进来）
+                if (state.isActive && state.hasFirstFix && state.lastFixAt > 0) {
+                    val stalledSec = ((nowTick - state.lastFixAt) / 1000L).coerceAtLeast(0L)
+                    if (stalledSec >= 90L) {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            color = Color(0xFF4A1410),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text(
+                                    text = "定位已中断 ${stalledSec / 60} 分钟",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color(0xFFFF8A65),
+                                )
+                                Text(
+                                    text = "后台可能被系统清理了，检查电池设置",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.7f),
+                                )
+                            }
+                        }
+                    }
                 }
 
                 // 紧凑数据卡：文字退居次要，把画面让给地图
@@ -5384,10 +5457,12 @@ fun RecordScreen(
 
                 Spacer(Modifier.weight(1f))
 
-                MissionBar(
-                    text = if (state.isActive) "任务进行中 · 保持定位开启" else "任务 · 记录下一段行程",
-                    palette = palette,
-                )
+                AnimatedVisibility(visible = showMissionBar) {
+                    MissionBar(
+                        text = if (state.isActive) "任务进行中 · 保持定位开启" else "任务 · 记录下一段行程",
+                        palette = palette,
+                    )
+                }
 
                 Spacer(Modifier.height(14.dp))
 
@@ -5423,6 +5498,9 @@ fun RecordScreen(
                         }
                     }
                 } else {
+                    // 浅色模式下 #E85D0F 在米白底上对比偏弱，给按钮一圈同色光晕把"开始记录"跳出来。
+                    // 深色模式不加——深色底上的橙色已经足够亮。
+                    val isDark = isSystemInDarkTheme()
                     Button(
                         onClick = {
                             val fine = ContextCompat.checkSelfPermission(
@@ -5430,7 +5508,15 @@ fun RecordScreen(
                             ) == PackageManager.PERMISSION_GRANTED
                             if (fine) startNow() else permissionLauncher.launch(requiredPermissions())
                         },
-                        modifier = Modifier.fillMaxWidth().height(66.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(66.dp)
+                            .shadow(
+                                elevation = if (isDark) 0.dp else 18.dp,
+                                shape = RoundedCornerShape(33.dp),
+                                ambientColor = palette.accent,
+                                spotColor = palette.accent,
+                            ),
                         shape = RoundedCornerShape(33.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = palette.accent,
@@ -5621,6 +5707,7 @@ private fun formatTime(millis: Long): String {
 ```kotlin
 package com.llyytt.path.feature.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -5638,11 +5725,15 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
+import com.llyytt.path.ui.XingjiTheme
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -5718,6 +5809,14 @@ fun SettingsScreen(
         }
     }
 
+    val palette = XingjiTheme.palette
+    val batteryUnrestricted = remember(context) {
+        val pm = context.getSystemService(android.content.Context.POWER_SERVICE)
+            as android.os.PowerManager
+        pm.isIgnoringBatteryOptimizations(context.packageName)
+    }
+
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -5770,6 +5869,46 @@ fun SettingsScreen(
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(top = 16.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val ctx = context
+                            runCatching {
+                                ctx.startActivity(
+                                    Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                )
+                            }
+                        }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("后台运行检查", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = if (batteryUnrestricted) {
+                                "已在电池优化白名单里"
+                            } else {
+                                "未加白名单——锁屏后可能被系统清理，导致记录中断"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (batteryUnrestricted) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                        )
+                    }
+                    Text(
+                        text = "›",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                HorizontalDivider()
 
                 Row(
                     modifier = Modifier
@@ -5833,17 +5972,29 @@ fun SettingsScreen(
 
                     // 当前已保存了什么——不显示 Key 明文，只说"已保存"
                     val saved = config
+                    // 浅色模式下 surfaceVariant 是 #F1EFEA（脏灰），改成 panel 白底 + hairline 描边，
+                    // 与设计语言「细分割线代替卡片」一致；同时给一条橙色左边线作为"已保存"的视觉锚点。
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = palette.panel,
                         shape = MaterialTheme.shapes.medium,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, palette.hairline),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Text(
-                                text = "当前已保存",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier
+                                        .width(3.dp)
+                                        .height(14.dp)
+                                        .background(palette.accent),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "当前已保存",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = palette.accent,
+                                )
+                            }
                             Spacer(Modifier.height(6.dp))
                             if (saved == null || !saved.isReady) {
                                 Text(
@@ -5884,25 +6035,27 @@ fun SettingsScreen(
 
                     Spacer(Modifier.height(12.dp))
 
-                    OutlinedTextField(
+                    TextField(
                         value = baseUrl,
                         onValueChange = { baseUrl = it; status = null },
                         label = { Text("BaseURL") },
                         placeholder = { Text("https://api.openai.com/v1") },
                         singleLine = true,
+                        colors = hairlineTextFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
+                    TextField(
                         value = model,
                         onValueChange = { model = it; status = null },
                         label = { Text("模型名") },
                         placeholder = { Text("gpt-4o-mini") },
                         singleLine = true,
+                        colors = hairlineTextFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
+                    TextField(
                         value = keyInput,
                         onValueChange = { keyInput = it; status = null },
                         label = { Text("API Key") },
@@ -5911,6 +6064,7 @@ fun SettingsScreen(
                         },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
+                        colors = hairlineTextFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
 
@@ -5957,6 +6111,21 @@ fun SettingsScreen(
             },
         )
     }
+}
+
+@Composable
+private fun hairlineTextFieldColors(): androidx.compose.material3.TextFieldColors {
+    val palette = XingjiTheme.palette
+    return TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+        focusedIndicatorColor = palette.accent,
+        unfocusedIndicatorColor = palette.hairline,
+        focusedLabelColor = palette.accent,
+        unfocusedLabelColor = palette.textTertiary,
+        cursorColor = palette.accent,
+    )
 }
 ```
 
@@ -6084,14 +6253,47 @@ fun SegmentEditorScreen(tripId: Long, onBack: () -> Unit) {
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                     contentAlignment = Alignment.Center,
                 ) {
+                    val palette = XingjiTheme.palette
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("还没有分段", style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(8.dp))
+                        // 空状态视觉锚点：三条长短不一的横线，暗示"将被切开的轨迹"
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Box(Modifier.width(72.dp).height(3.dp).background(palette.hairline))
+                            Box(Modifier.width(48.dp).height(3.dp).background(palette.accent))
+                            Box(Modifier.width(28.dp).height(3.dp).background(palette.hairline))
+                        }
+                        Spacer(Modifier.height(28.dp))
                         Text(
-                            "点右上角「自动分段」按速度和停顿自动切分。",
+                            "还没有分段",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "按速度和停顿，自动把这条行程切成\n走路 / 骑车 / 坐车 / 停留",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
+                        Spacer(Modifier.height(24.dp))
+                        // 主 CTA：直接给「自动分段」按钮，不用让用户去右上角找
+                        androidx.compose.material3.Button(
+                            onClick = { run { app.segmentRepository.autoSegment(tripId) } },
+                            enabled = !busy,
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = palette.accent,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                            modifier = Modifier.height(48.dp),
+                        ) {
+                            Text(
+                                "自动分段",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
                     }
                 }
 
@@ -6518,6 +6720,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -6738,6 +6941,16 @@ fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Uni
     Box(modifier = Modifier.fillMaxSize()) {
         engine.MapView(controller = controller, modifier = Modifier.fillMaxSize())
 
+        // 浅色模式：高德默认浅色底图会把橙色轨迹淹没。
+        // 整图压一层深色蒙版，让橙色轨迹跳出来，与深色模式的"夜间仪表盘"气质对齐。
+        if (!isSystemInDarkTheme()) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0B0D10).copy(alpha = 0.35f)),
+            )
+        }
+
         // 顶部压一层暗色渐变，保证白色文字在浅色地图上也读得清
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
@@ -6945,6 +7158,25 @@ fun TripDetailScreen(tripId: Long, onBack: () -> Unit, onOpenSegments: () -> Uni
                     }
 
                     Spacer(Modifier.height(6.dp))
+
+                    // 事后诊断：最后一个点离结束时间太久，说明中途定位就断了
+                    run {
+                        val lastPointAt = d.points.lastOrNull()?.recordedAt ?: 0L
+                        val endedAt = d.trip.endedAt ?: 0L
+                        if (lastPointAt > 0L && endedAt > lastPointAt) {
+                            val silentMin = (endedAt - lastPointAt) / 60_000L
+                            if (silentMin >= 5L) {
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    text = "⚠ 最后 ${silentMin} 分钟没有记录到位置" +
+                                        "（${Fmt.clock(lastPointAt)} 之后定位就停了），" +
+                                        "多半是后台服务被系统清理。请把本应用加入电池白名单。",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
